@@ -17,37 +17,243 @@
     document.documentElement.style.scrollBehavior = "auto";
   }
 
-  /* ============ BOOT LOADER ============ */
-  const loader = document.getElementById("loader");
-  const loaderBar = document.getElementById("loaderBar");
-  const loaderStatus = document.getElementById("loaderStatus");
-  const bootLines = [
-    "INITIALIZING NEURAL CORE…",
-    "LOADING INTELLIGENCE MODULES…",
-    "CALIBRATING CREATIVITY ENGINE…",
-    "SYNCING WITH THE VOID…",
-    "WELCOME, VISITOR.",
-  ];
-
-  function runLoader() {
-    if (reducedMotion) { loader.classList.add("done"); return; }
-    let step = 0;
-    const total = bootLines.length;
-    const tick = () => {
-      loaderStatus.textContent = bootLines[step];
-      loaderBar.style.width = `${((step + 1) / total) * 100}%`;
-      step++;
-      if (step < total) {
-        setTimeout(tick, 220);
-      } else {
-        setTimeout(() => loader.classList.add("done"), 420);
-      }
-    };
-    tick();
-    // Failsafe: never trap the user behind the loader
-    setTimeout(() => loader.classList.add("done"), 4000);
+  /* ============ THEME ENGINE — dark void / paper lab ============ */
+  const THEME_KEY = "cjay-theme";
+  const themeHooks = [];
+  const isLight = () => document.documentElement.dataset.theme === "light";
+  const themeRGB = () => ({
+    acid: isLight() ? "92, 124, 10" : "198, 255, 0",
+    ink: isLight() ? "19, 19, 16" : "242, 240, 234",
+  });
+  function refreshToggles() {
+    document.querySelectorAll(".theme-toggle").forEach((b) => {
+      b.querySelector(".theme-toggle__icon").textContent = isLight() ? "☾" : "☀";
+      b.querySelector(".theme-toggle__label").textContent = isLight() ? "DARK" : "LIGHT";
+    });
   }
-  runLoader();
+  function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", t === "light" ? "#f4f2ea" : "#050507");
+    refreshToggles();
+    themeHooks.forEach((fn) => fn(t === "light"));
+  }
+  document.querySelectorAll(".theme-toggle").forEach((b) =>
+    b.addEventListener("click", () => setTheme(isLight() ? "dark" : "light"))
+  );
+  refreshToggles();
+  // ?theme=light|dark — force a theme (handy for sharing/screenshots)
+  const forcedTheme = new URLSearchParams(location.search).get("theme");
+  if (forcedTheme === "light" || forcedTheme === "dark") setTheme(forcedTheme);
+
+  /* ============ CINEMATIC INTRO — PARTICLE GENESIS ============
+     thousands of particles assemble into the name, breathe,
+     then detonate as the site warps in from hyperspace        */
+  const intro = document.getElementById("intro");
+
+  async function runIntro() {
+    if (!intro) return;
+    const mainEl = document.querySelector("main");
+    const navEl = document.getElementById("nav");
+    if (reducedMotion || auditMode) {
+      intro.classList.add("reveal", "gone");
+      return;
+    }
+
+    const canvas = document.getElementById("intro-canvas");
+    const sub = document.getElementById("introSub");
+    const percentEl = document.getElementById("introPercent");
+    const flash = document.getElementById("introFlash");
+    const skipBtn = document.getElementById("introSkip");
+    const ctx = canvas.getContext("2d");
+    const dpr = Math.min(devicePixelRatio, 1.5);
+    const W = innerWidth, H = innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const LIGHTMODE = isLight();
+    const { acid: AC, ink: IK } = themeRGB();
+
+    document.body.style.overflow = "hidden";
+    mainEl.classList.add("warp");
+    navEl.classList.add("warp");
+
+    // wait briefly for the display font so the particles form real letterforms
+    try {
+      await Promise.race([
+        document.fonts.load("700 120px 'Clash Display'"),
+        new Promise((r) => setTimeout(r, 700)),
+      ]);
+    } catch (e) { /* fallback font is fine */ }
+
+    // ---- sample the name into particle targets ----
+    const TEXT = "CJAY_CYBER";
+    const off = document.createElement("canvas");
+    off.width = W; off.height = H;
+    const octx = off.getContext("2d");
+    let fontSize = Math.min(W / 6.4, 168);
+    const setFont = () => { octx.font = `700 ${fontSize}px 'Clash Display', 'Arial Black', sans-serif`; };
+    setFont();
+    // shrink until the name actually fits the viewport (any font fallback)
+    const maxWidth = W * 0.9;
+    if (octx.measureText(TEXT).width > maxWidth) {
+      fontSize *= maxWidth / octx.measureText(TEXT).width;
+      setFont();
+    }
+    octx.textAlign = "center";
+    octx.textBaseline = "middle";
+    octx.fillStyle = "#fff";
+    octx.fillText(TEXT, W / 2, H / 2);
+    const img = octx.getImageData(0, 0, W, H).data;
+
+    const gap = fontSize > 90 ? 4 : 3;
+    const targets = [];
+    for (let y = 0; y < H; y += gap) {
+      for (let x = 0; x < W; x += gap) {
+        if (img[(y * W + x) * 4 + 3] > 128) targets.push({ x, y });
+      }
+    }
+    // shuffle so assembly looks organic, cap for perf
+    for (let i = targets.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [targets[i], targets[j]] = [targets[j], targets[i]];
+    }
+    targets.length = Math.min(targets.length, 4200);
+
+    const cx = W / 2, cy = H / 2;
+    const parts = targets.map((t) => {
+      // born on a ring far outside the screen — they fly IN
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.max(W, H) * (0.6 + Math.random() * 0.5);
+      return {
+        tx: t.x, ty: t.y,
+        sx: cx + Math.cos(a) * r,
+        sy: cy + Math.sin(a) * r,
+        x: 0, y: 0, px: 0, py: 0,
+        delay: Math.random() * 0.9,
+        hot: Math.random() < 0.12,
+        size: 1.2 + Math.random() * 1.6,
+        vx: 0, vy: 0,
+        a: 1,
+      };
+    });
+
+    // ---- timeline (seconds) ----
+    const T_ASSEMBLE = 2.6;   // particles arriving
+    const T_EXPLODE = 4.6;    // detonation (long hold so the name lands)
+    const T_REVEAL = 4.95;    // site warps in
+    const T_END = 6.6;
+    const easeOut = (p) => 1 - Math.pow(1 - p, 4);
+
+    let exploded = false, revealed = false, finished = false, raf = 0;
+    const rings = [];
+    const t0 = performance.now();
+
+    function finish() {
+      if (finished) return;
+      finished = true;
+      cancelAnimationFrame(raf);
+      intro.classList.add("reveal", "gone");
+      mainEl.classList.remove("warp");
+      navEl.classList.remove("warp");
+      document.body.style.overflow = "";
+      removeEventListener("keydown", finish);
+    }
+    skipBtn.addEventListener("click", finish);
+    addEventListener("keydown", finish);
+    setTimeout(finish, 9000); // failsafe — never trap the visitor
+
+    function explode() {
+      exploded = true;
+      flash.classList.add("zap");
+      rings.push({ r: 0, w: 3, c: AC }, { r: -40, w: 1.5, c: IK });
+      for (const p of parts) {
+        const dx = p.x - cx, dy = p.y - cy;
+        const d = Math.hypot(dx, dy) || 1;
+        const speed = 6 + Math.random() * 18;
+        p.vx = (dx / d) * speed + (Math.random() - 0.5) * 4;
+        p.vy = (dy / d) * speed + (Math.random() - 0.5) * 4;
+      }
+    }
+
+    function frame(now) {
+      if (finished) return;
+      raf = requestAnimationFrame(frame);
+      const t = (now - t0) / 1000;
+      ctx.clearRect(0, 0, W, H);
+      // additive glow washes out on paper — use normal compositing in light mode
+      ctx.globalCompositeOperation = LIGHTMODE ? "source-over" : "lighter";
+
+      if (!exploded) {
+        // ---- assembly: fly in from the void ----
+        for (const p of parts) {
+          const lp = Math.min(Math.max((t - p.delay) / T_ASSEMBLE, 0), 1);
+          const e = easeOut(lp);
+          const jx = lp === 1 ? (Math.random() - 0.5) * 1.4 : 0;
+          const jy = lp === 1 ? (Math.random() - 0.5) * 1.4 : 0;
+          p.x = p.sx + (p.tx - p.sx) * e + jx;
+          p.y = p.sy + (p.ty - p.sy) * e + jy;
+          // incoming streaks while still travelling
+          if (lp > 0 && lp < 0.92) {
+            ctx.strokeStyle = `rgba(${AC}, ${0.05 + lp * 0.1})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x + (p.sx - p.tx) * 0.018, p.y + (p.sy - p.ty) * 0.018);
+            ctx.stroke();
+          }
+          ctx.fillStyle = p.hot
+            ? `rgba(${IK}, ${0.45 + lp * 0.5})`
+            : `rgba(${AC}, ${0.3 + lp * 0.6})`;
+          ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+        if (t > 2.6) sub.classList.add("on");
+        const pct = Math.min(Math.floor(easeOut(Math.min(t / T_EXPLODE, 1)) * 100), 99);
+        percentEl.textContent = `SYNTHESIZING — ${String(pct).padStart(3, "0")}%`;
+        if (t >= T_EXPLODE) { percentEl.textContent = "SYNTHESIZING — 100%"; explode(); }
+      } else {
+        // ---- detonation: radial blast with motion streaks ----
+        for (const p of parts) {
+          p.px = p.x; p.py = p.y;
+          p.x += p.vx; p.y += p.vy;
+          p.vx *= 1.04; p.vy *= 1.04;
+          p.a *= 0.965;
+          if (p.a < 0.02) continue;
+          ctx.strokeStyle = p.hot
+            ? `rgba(${IK}, ${p.a})`
+            : `rgba(${AC}, ${p.a * 0.85})`;
+          ctx.lineWidth = p.size;
+          ctx.beginPath();
+          ctx.moveTo(p.px - p.vx * 1.6, p.py - p.vy * 1.6);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
+        // shockwave rings
+        for (const ring of rings) {
+          ring.r += Math.max(W, H) * 0.045;
+          if (ring.r > 0) {
+            const ra = Math.max(1 - ring.r / (Math.max(W, H) * 0.9), 0);
+            ctx.strokeStyle = `rgba(${ring.c}, ${ra * 0.8})`;
+            ctx.lineWidth = ring.w * ra * 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        if (!revealed && t >= T_REVEAL) {
+          revealed = true;
+          intro.classList.add("reveal");
+          mainEl.classList.remove("warp");
+          navEl.classList.remove("warp");
+          document.body.style.overflow = "";
+        }
+        if (t >= T_END) finish();
+      }
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  runIntro();
 
   /* ============ LIVING CORE — GLSL energy organism ============ */
   async function initLivingCore() {
@@ -222,6 +428,37 @@
     galaxy.rotation.x = -0.45;
     scene.add(galaxy, coreGroup);
 
+    // ---- live re-theme: additive neon in the void, olive ink on paper ----
+    function applyCoreTheme(light) {
+      const acid = light ? 0x4a6b00 : 0xc6ff00;
+      uniforms.uColorA.value.set(acid);
+      uniforms.uColorB.value.set(light ? 0x131310 : 0xf2f0ea);
+      const blend = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+      [blob.material, shell.material, galaxy.material].forEach((m) => {
+        m.blending = blend;
+        m.needsUpdate = true;
+      });
+      galaxy.material.opacity = light ? 0.5 : 0.8;
+      rings.forEach((ring) => {
+        ring.material.color.set(acid);
+        ring.material.blending = blend;
+        ring.material.needsUpdate = true;
+      });
+      const gIn = new THREE.Color(acid);
+      const gOut = new THREE.Color(light ? 0x6b6a5e : 0xf2f0ea);
+      const colAttr = galaxyGeo.getAttribute("color");
+      for (let i = 0; i < STARS; i++) {
+        const r = Math.hypot(gPos[i * 3], gPos[i * 3 + 2]);
+        const c = gIn.clone().lerp(gOut, Math.min(r / 24, 1));
+        colAttr.array[i * 3] = c.r;
+        colAttr.array[i * 3 + 1] = c.g;
+        colAttr.array[i * 3 + 2] = c.b;
+      }
+      colAttr.needsUpdate = true;
+    }
+    themeHooks.push(applyCoreTheme);
+    if (isLight()) applyCoreTheme(true);
+
     // ---- layout: core sits right of the headline on wide screens ----
     function layout() {
       camera.aspect = innerWidth / innerHeight;
@@ -288,7 +525,8 @@
     }
     document.documentElement.classList.add("no-cursor");
     const ctx = canvas.getContext("2d");
-    const dpr = Math.min(devicePixelRatio, 2);
+    // dpr capped low + zero shadowBlur = no GPU stalls
+    const dpr = Math.min(devicePixelRatio, 1.5);
     function size() {
       canvas.width = innerWidth * dpr;
       canvas.height = innerHeight * dpr;
@@ -297,90 +535,90 @@
     size();
     addEventListener("resize", size);
 
-    const ACID = "198, 255, 0";
-    let x = -100, y = -100, hover = false, ringR = 0, tick = 0;
+    let ACID = themeRGB().acid;
+    let DOT = themeRGB().ink;
+    let lightCursor = isLight();
+    themeHooks.push(() => {
+      ACID = themeRGB().acid;
+      DOT = themeRGB().ink;
+      lightCursor = isLight();
+    });
+    let x = -100, y = -100, hover = false, ringR = 10, tick = 0;
     const trail = [];
     const sparks = [];
+    const MAX_TRAIL = 18, MAX_SPARKS = 40;
 
     addEventListener("pointermove", (e) => {
       const speed = Math.hypot(e.clientX - x, e.clientY - y);
       x = e.clientX; y = e.clientY;
       trail.push({ x, y });
-      if (trail.length > 26) trail.shift();
-      // fast moves shed sparks
-      if (speed > 18) {
-        for (let i = 0; i < 2; i++) {
-          sparks.push({
-            x, y,
-            vx: (Math.random() - 0.5) * 3,
-            vy: (Math.random() - 0.5) * 3,
-            life: 1,
-          });
-        }
+      if (trail.length > MAX_TRAIL) trail.shift();
+      if (speed > 22 && sparks.length < MAX_SPARKS) {
+        sparks.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 3,
+          vy: (Math.random() - 0.5) * 3,
+          life: 1,
+        });
       }
     }, { passive: true });
 
-    document.querySelectorAll("[data-hover]").forEach((el) => {
-      el.addEventListener("pointerenter", () => (hover = true));
-      el.addEventListener("pointerleave", () => (hover = false));
-    });
+    // event delegation — one listener instead of hundreds
+    document.addEventListener("pointerover", (e) => {
+      hover = !!e.target.closest("[data-hover], a, button");
+    }, { passive: true });
+
+    function strokeTrail(width, alpha) {
+      ctx.strokeStyle = `rgba(${ACID}, ${alpha})`;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(trail[0].x, trail[0].y);
+      for (let i = 1; i < trail.length; i++) ctx.lineTo(trail[i].x, trail[i].y);
+      ctx.stroke();
+    }
 
     function draw() {
       requestAnimationFrame(draw);
       tick++;
       ctx.clearRect(0, 0, innerWidth, innerHeight);
-      ctx.globalCompositeOperation = "lighter";
+      ctx.globalCompositeOperation = lightCursor ? "source-over" : "lighter";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
 
-      // comet trail
-      for (let i = 1; i < trail.length; i++) {
-        const p = i / trail.length;
-        ctx.strokeStyle = `rgba(${ACID}, ${p * 0.55})`;
-        ctx.lineWidth = p * 5;
-        ctx.lineCap = "round";
-        ctx.shadowColor = `rgba(${ACID}, 0.9)`;
-        ctx.shadowBlur = 14;
-        ctx.beginPath();
-        ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
-        ctx.lineTo(trail[i].x, trail[i].y);
-        ctx.stroke();
+      // comet trail — two cheap strokes fake the glow (no shadowBlur)
+      if (trail.length > 1) {
+        strokeTrail(7, 0.12);
+        strokeTrail(2.5, 0.5);
       }
-      // trail decays even when idle
       if (tick % 2 === 0 && trail.length) trail.shift();
 
       // sparks
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
-        s.x += s.vx; s.y += s.vy; s.life -= 0.04;
+        s.x += s.vx; s.y += s.vy; s.life -= 0.045;
         if (s.life <= 0) { sparks.splice(i, 1); continue; }
-        ctx.fillStyle = `rgba(${ACID}, ${s.life * 0.8})`;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.life * 2.2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = `rgba(${ACID}, ${s.life * 0.7})`;
+        ctx.fillRect(s.x, s.y, s.life * 3, s.life * 3);
       }
 
-      // core glow
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, 22);
-      grad.addColorStop(0, `rgba(${ACID}, 0.85)`);
+      // core glow (single gradient — cheap)
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, 20);
+      grad.addColorStop(0, `rgba(${ACID}, 0.8)`);
       grad.addColorStop(1, `rgba(${ACID}, 0)`);
       ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(x, y, 22, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(x - 20, y - 20, 40, 40);
 
       // hot center
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(242, 240, 234, 0.95)";
+      ctx.fillStyle = `rgba(${DOT}, 0.95)`;
       ctx.beginPath();
-      ctx.arc(x, y, 2.4, 0, Math.PI * 2);
+      ctx.arc(x, y, 2.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // targeting ring expands on interactive elements
-      ringR += ((hover ? 24 : 10) - ringR) * 0.18;
+      // rotating reticle — expands & locks on interactive elements
+      ringR += ((hover ? 23 : 10) - ringR) * 0.18;
       const rot = tick * 0.03;
       ctx.strokeStyle = `rgba(${ACID}, ${hover ? 0.95 : 0.45})`;
       ctx.lineWidth = 1.4;
-      // four arc segments — rotating reticle
       for (let q = 0; q < 4; q++) {
         const a = rot + (q * Math.PI) / 2;
         ctx.beginPath();
@@ -388,13 +626,10 @@
         ctx.stroke();
       }
       if (hover) {
-        // corner ticks lock on
         ctx.fillStyle = `rgba(${ACID}, 0.95)`;
         for (let q = 0; q < 4; q++) {
           const a = -rot * 1.5 + (q * Math.PI) / 2 + Math.PI / 4;
-          ctx.beginPath();
-          ctx.arc(x + Math.cos(a) * (ringR + 7), y + Math.sin(a) * (ringR + 7), 1.6, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.fillRect(x + Math.cos(a) * (ringR + 7) - 1.5, y + Math.sin(a) * (ringR + 7) - 1.5, 3, 3);
         }
       }
     }

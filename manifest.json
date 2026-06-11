@@ -1,0 +1,17 @@
+{
+  "name": "Joseph Chijioke Emmanuel — AI Native Engineer",
+  "short_name": "CJAY_CYBER",
+  "description": "Portfolio of Joseph Chijioke Emmanuel (Cjay-Cyber) — AI Native Engineer in Lagos, Nigeria.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#050507",
+  "theme_color": "#050507",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23050507'/><text x='256' y='340' font-size='240' text-anchor='middle' fill='%23c6ff00' font-family='monospace' font-weight='bold'>CJ</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

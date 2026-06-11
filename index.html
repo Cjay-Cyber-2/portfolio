@@ -16,18 +16,21 @@
   <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
+  <meta name="theme-color" content="#050507" />
+  <link rel="manifest" href="manifest.json" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("cjay-theme") || "dark";</script>
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23050507'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='%23c6ff00' font-family='monospace' font-weight='bold'>CJ</text></svg>" />
 </head>
 <body>
 
-  <!-- ============ BOOT LOADER ============ -->
-  <div class="loader" id="loader" aria-hidden="true">
-    <div class="loader__inner">
-      <div class="loader__logo">CJAY<span>_</span>CYBER</div>
-      <div class="loader__bar"><div class="loader__bar-fill" id="loaderBar"></div></div>
-      <div class="loader__status mono" id="loaderStatus">INITIALIZING NEURAL CORE…</div>
-    </div>
+  <!-- ============ CINEMATIC INTRO — PARTICLE GENESIS ============ -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <canvas id="intro-canvas"></canvas>
+    <div class="intro__sub mono" id="introSub">JOSEPH CHIJIOKE EMMANUEL ▸ AI NATIVE ENGINEER</div>
+    <div class="intro__percent mono" id="introPercent">SYNTHESIZING — 000%</div>
+    <button class="intro__skip mono" id="introSkip">SKIP ▸▸</button>
+    <div class="intro__flash" id="introFlash"></div>
   </div>
 
   <!-- ============ PLASMA CURSOR ============ -->
@@ -49,6 +52,7 @@
     </nav>
     <div class="nav__right">
       <span class="nav__time mono" id="localTime">--:--:--</span>
+      <button class="theme-toggle mono" data-hover aria-label="Toggle light/dark mode"><span class="theme-toggle__icon">☀</span> <span class="theme-toggle__label">LIGHT</span></button>
       <a href="#contact" class="btn btn--small" data-hover data-magnetic>LET'S TALK</a>
     </div>
     <button class="nav__burger" id="burger" aria-label="Menu" data-hover>
@@ -63,6 +67,7 @@
     <a href="#work" class="mobile-menu__link">WORK</a>
     <a href="#journey" class="mobile-menu__link">JOURNEY</a>
     <a href="#contact" class="mobile-menu__link">CONTACT</a>
+    <button class="theme-toggle theme-toggle--mobile mono" aria-label="Toggle light/dark mode"><span class="theme-toggle__icon">☀</span> <span class="theme-toggle__label">LIGHT</span></button>
   </div>
 
   <main id="top">
@@ -95,6 +100,7 @@
 
         <div class="hero__cta reveal">
           <a href="#work" class="btn btn--primary" data-hover data-magnetic>VIEW THE WORK <span class="btn__arrow">↗</span></a>
+          <a href="assets/Chijioke_Joseph_CV.pdf" target="_blank" rel="noopener" class="btn btn--ghost" data-hover data-magnetic>VIEW CV <span class="btn__arrow">↓</span></a>
           <a href="#contact" class="btn btn--ghost" data-hover data-magnetic>INITIATE CONTACT</a>
         </div>
 
@@ -130,34 +136,52 @@
 
       <div class="about__grid">
         <div class="about__photo reveal" data-hover>
-          <!-- ▼ REPLACE: put your photo at assets/me.jpg and swap this placeholder ▼ -->
+          <!-- ▼ save your desk-pose photo as assets/me-1.jpg ▼ -->
           <div class="photo-frame">
             <div class="photo-placeholder">
-              <span class="mono">[ YOUR PHOTO HERE ]</span>
-              <span class="photo-placeholder__hint mono">drop assets/me.jpg<br />&amp; update index.html</span>
+              <span class="mono">[ PHOTO LOADING… ]</span>
+              <span class="photo-placeholder__hint mono">save photo as<br />assets/me-1.jpg</span>
             </div>
-            <!-- <img src="assets/me.jpg" alt="Joseph Chijioke Emmanuel" /> -->
-            <div class="photo-frame__tag mono">FIG 1.0 — THE ENGINEER</div>
+            <img src="assets/me-1.jpg" alt="Joseph Chijioke Emmanuel" onerror="this.remove()" />
+            <div class="photo-frame__tag mono">FIG 1.0 — THE ENGINEER · LAGOS</div>
           </div>
         </div>
 
         <div class="about__text">
           <p class="about__lead reveal">
-            I'm <strong>Joseph</strong> — an <span class="acid">AI Native Engineer</span> who doesn't just
-            use AI tools, I think in them. I design, build and ship systems where intelligence
+            I'm <strong>Joseph</strong> — an <span class="acid">AI Native Engineer</span> and
+            solution specialist. I don't just use AI tools, I think in them: intelligence
             is the architecture, not an afterthought.
           </p>
           <p class="reveal">
-            Based in Lagos, Nigeria, I work across the full spectrum — frontend, backend
-            and machine learning. I orchestrate multi-agent swarms with 250+ specialist
-            agents, build edge-AI products like a real-time sign-language translator,
-            and ship platforms on web2 and web3 rails (Stellar / Soroban included).
-            My mission: build software that feels alive.
+            I'm currently an <strong>AI Native Engineer intern</strong> at
+            <a href="https://periculum.io" target="_blank" rel="noopener" class="acid-link" data-hover>Periculum</a>,
+            a Lagos-based data analytics &amp; credit-intelligence company, while studying
+            <strong>Software Engineering at BYU–Idaho</strong> (Herbert J. Grant scholarship recipient)
+            and <strong>Computer Science at Yaba College of Technology</strong>. I serve as an
+            exco of <strong>NITHUB – YABATECH</strong>, linking students to the broader innovation
+            ecosystem, and represent <strong>Cowrywise</strong> as a campus ambassador.
           </p>
           <p class="reveal">
-            When I'm not engineering, I'm reverse-engineering — pulling apart the newest
-            models, agent frameworks and ideas to stay three steps ahead of the curve.
+            My range runs the full spectrum — prompt engineering and AI workflow design,
+            frontend craft, Go-powered backends, and systems design with real data-structures
+            discipline (Java, Python, C). My mission: build software that feels alive.
           </p>
+
+          <div class="about__areas reveal">
+            <span class="about__areas-label mono acid">// CORE AREAS</span>
+            <div class="chip-grid">
+              <span class="chip mono" data-hover>ARTIFICIAL INTELLIGENCE</span>
+              <span class="chip mono" data-hover>GENERATIVE AI APPS</span>
+              <span class="chip mono" data-hover>AI PRODUCT DEVELOPMENT</span>
+              <span class="chip mono" data-hover>PROMPT ENGINEERING</span>
+              <span class="chip mono" data-hover>AI WORKFLOW DESIGN</span>
+              <span class="chip mono" data-hover>AUTOMATION SYSTEMS</span>
+              <span class="chip mono" data-hover>TECHNICAL RESEARCH</span>
+              <span class="chip mono" data-hover>PRODUCT STRATEGY</span>
+              <span class="chip mono" data-hover>SYSTEMS THINKING</span>
+            </div>
+          </div>
 
           <div class="about__stats reveal">
             <div class="stat" data-hover>
@@ -165,8 +189,8 @@
               <span class="stat__label mono">PUBLIC REPOS</span>
             </div>
             <div class="stat" data-hover>
-              <span class="stat__num" data-count="250">0</span><span class="stat__plus acid">+</span>
-              <span class="stat__label mono">AGENTS ORCHESTRATED</span>
+              <span class="stat__num" data-count="5">0</span><span class="stat__plus acid">+</span>
+              <span class="stat__label mono">LIVE PRODUCTS</span>
             </div>
             <div class="stat" data-hover>
               <span class="stat__num" data-count="3">0</span><span class="stat__plus acid">×</span>
@@ -197,11 +221,11 @@
           </div>
           <h3>AI ENGINEERING</h3>
           <ul class="mono">
-            <li>LLM Integration &amp; Orchestration</li>
-            <li>Autonomous Agents &amp; Tool Use</li>
-            <li>RAG &amp; Vector Databases</li>
             <li>Prompt &amp; Context Engineering</li>
-            <li>Fine-tuning &amp; Evaluation</li>
+            <li>Generative AI Applications</li>
+            <li>AI Workflow &amp; Automation Design</li>
+            <li>LLM Orchestration &amp; Agents</li>
+            <li>RAG &amp; Vector Databases</li>
           </ul>
         </article>
 
@@ -214,9 +238,9 @@
           <ul class="mono">
             <li>React / Next.js</li>
             <li>TypeScript / JavaScript</li>
+            <li>Flutter &amp; Dart</li>
             <li>Three.js / WebGL</li>
-            <li>Tailwind / CSS Architecture</li>
-            <li>Motion &amp; Interaction Design</li>
+            <li>Tailwind / Motion Design</li>
           </ul>
         </article>
 
@@ -225,13 +249,13 @@
             <span class="skill-card__icon">◍</span>
             <span class="mono skill-card__index">SYS.03</span>
           </div>
-          <h3>BACKEND</h3>
+          <h3>BACKEND &amp; SYSTEMS</h3>
           <ul class="mono">
-            <li>Node.js / Python / Go</li>
+            <li>Go (Golang) / Node.js / Python</li>
+            <li>Java / C — Data Structures &amp; Algorithms</li>
+            <li>Systems &amp; Architecture Design</li>
             <li>REST &amp; Realtime APIs</li>
             <li>PostgreSQL / MongoDB / Redis</li>
-            <li>Stellar / Soroban Smart Contracts</li>
-            <li>System Design</li>
           </ul>
         </article>
 
@@ -240,19 +264,19 @@
             <span class="skill-card__icon">◬</span>
             <span class="mono skill-card__index">SYS.04</span>
           </div>
-          <h3>OPS &amp; TOOLING</h3>
+          <h3>STRATEGY &amp; OPS</h3>
           <ul class="mono">
-            <li>Git / GitHub Actions</li>
-            <li>Docker &amp; Cloud Deploys</li>
-            <li>Vercel / AWS / GCP</li>
-            <li>CI/CD Pipelines</li>
+            <li>Product Strategy &amp; Systems Thinking</li>
+            <li>Technical Research</li>
+            <li>Git / Docker / CI-CD</li>
+            <li>Vercel / Cloud Deploys</li>
             <li>AI-assisted Dev Workflows</li>
           </ul>
         </article>
       </div>
 
       <div class="skills__ticker mono reveal" aria-hidden="true">
-        <span id="tickerText">PYTHON · TYPESCRIPT · GO · REACT · NEXT.JS · NODE · THREE.JS · MEDIAPIPE · CLAUDE · STELLAR · SOROBAN · DOCKER · POSTGRES · TAILWIND · GIT ·&nbsp;</span>
+        <span id="tickerText">PYTHON · TYPESCRIPT · GO · JAVA · C · REACT · NEXT.JS · FLUTTER · NODE · THREE.JS · MEDIAPIPE · CLAUDE · DOCKER · POSTGRES · TAILWIND · GIT ·&nbsp;</span>
       </div>
     </section>
 
@@ -264,36 +288,36 @@
       </div>
 
       <div class="work__grid">
-        <!-- ▼ TIP: replace each .thumb-placeholder with a real screenshot:
-             <img src="assets/project-1.jpg" alt="Project name" />            ▼ -->
 
-        <article class="project reveal" data-hover>
-          <a href="https://flowfex.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="Syniq — Flowfex">
+        <article class="project project--feature reveal" data-hover>
+          <a href="https://flowfex.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="Syniq">
             <div class="project-thumb">
-              <div class="thumb-placeholder mono">[ SYNIQ — SCREENSHOT ]</div>
-              <div class="project__overlay"><span class="mono">VISIT LIVE SITE ↗</span></div>
+              <div class="thumb-placeholder mono">[ SYNIQ ]</div>
+              <img src="assets/proj-syniq.jpg" alt="Syniq — the skill operating layer for connected agents" loading="lazy" onerror="this.remove()" />
+              <div class="project__overlay"><span class="mono">VISIT LIVE SITE &#8599;</span></div>
             </div>
             <div class="project__info">
-              <span class="project__index mono acid">TX_01 — FLAGSHIP</span>
+              <span class="project__index mono acid">TX_01 &#8212; FLAGSHIP</span>
               <h3 class="project__name">SYNIQ</h3>
-              <p class="project__desc">Agent bridge &amp; visual orchestration platform — design, connect and run multi-agent AI workflows from a single canvas.</p>
+              <p class="project__desc">The skill operating layer for connected agents &#8212; semantic task matching, ranked skill selection and human-approval transparency in one orchestration surface.</p>
               <div class="project__tags mono">
-                <span>AI AGENTS</span><span>PYTHON</span><span>ORCHESTRATION</span>
+                <span>AI AGENTS</span><span>ORCHESTRATION</span><span>SEMANTIC SEARCH</span><span>PYTHON</span>
               </div>
             </div>
           </a>
         </article>
 
-        <article class="project project--offset reveal" data-hover>
+        <article class="project reveal" data-hover>
           <a href="https://sign-bridge-ashy.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="SignBridge">
             <div class="project-thumb">
-              <div class="thumb-placeholder mono">[ SIGNBRIDGE — SCREENSHOT ]</div>
-              <div class="project__overlay"><span class="mono">VISIT LIVE SITE ↗</span></div>
+              <div class="thumb-placeholder mono">[ SIGNBRIDGE ]</div>
+              <img src="assets/proj-signbridge.jpg" alt="SignBridge — a live bridge between sign and speech" loading="lazy" onerror="this.remove()" />
+              <div class="project__overlay"><span class="mono">VISIT LIVE SITE &#8599;</span></div>
             </div>
             <div class="project__info">
               <span class="project__index mono acid">TX_02</span>
               <h3 class="project__name">SIGNBRIDGE</h3>
-              <p class="project__desc">Bidirectional ASL communication for deaf &amp; hearing people — type-to-sign skeleton animation and camera sign-to-text, all browser-local edge AI.</p>
+              <p class="project__desc">A live bridge between sign and speech &#8212; type and a signing avatar appears; sign to the camera and it becomes text, spoken aloud. Real-time, browser-local edge AI.</p>
               <div class="project__tags mono">
                 <span>EDGE AI</span><span>NEXT.JS 15</span><span>MEDIAPIPE</span>
               </div>
@@ -301,35 +325,19 @@
           </a>
         </article>
 
-        <article class="project reveal" data-hover>
+        <article class="project project--offset reveal" data-hover>
           <a href="https://katherix.com" target="_blank" rel="noopener" class="project__link" aria-label="Katherix">
             <div class="project-thumb">
-              <div class="thumb-placeholder mono">[ KATHERIX — SCREENSHOT ]</div>
-              <div class="project__overlay"><span class="mono">VISIT LIVE SITE ↗</span></div>
+              <div class="thumb-placeholder mono">[ KATHERIX ]</div>
+              <img src="assets/proj-katherix.jpg" alt="Katherix — regulated pharmaceutical platform" loading="lazy" onerror="this.remove()" />
+              <div class="project__overlay"><span class="mono">VISIT LIVE SITE &#8599;</span></div>
             </div>
             <div class="project__info">
               <span class="project__index mono acid">TX_03</span>
               <h3 class="project__name">KATHERIX</h3>
-              <p class="project__desc">Regulated pharmaceutical platform — secure authentication, pharmacy services and clinical-precision care, live on its own domain.</p>
+              <p class="project__desc">Regulated pharmaceutical care, delivered with clinical precision &#8212; secure authentication, pharmacy services and an installable PWA storefront, live on its own domain.</p>
               <div class="project__tags mono">
                 <span>HEALTHTECH</span><span>FULL-STACK</span><span>PWA</span>
-              </div>
-            </div>
-          </a>
-        </article>
-
-        <article class="project project--offset reveal" data-hover>
-          <a href="https://bountixx.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="Bountixx">
-            <div class="project-thumb">
-              <div class="thumb-placeholder mono">[ BOUNTIXX — SCREENSHOT ]</div>
-              <div class="project__overlay"><span class="mono">VISIT LIVE SITE ↗</span></div>
-            </div>
-            <div class="project__info">
-              <span class="project__index mono acid">TX_04</span>
-              <h3 class="project__name">BOUNTIXX</h3>
-              <p class="project__desc">Game-like developer building-rush platform — race through challenges, ship fast, earn quick.</p>
-              <div class="project__tags mono">
-                <span>NEXT.JS</span><span>GAMIFICATION</span><span>PLATFORM</span>
               </div>
             </div>
           </a>
@@ -338,32 +346,34 @@
         <article class="project reveal" data-hover>
           <a href="https://thinkerdev.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="ThinkerDev">
             <div class="project-thumb">
-              <div class="thumb-placeholder mono">[ THINKERDEV — SCREENSHOT ]</div>
-              <div class="project__overlay"><span class="mono">VISIT LIVE SITE ↗</span></div>
+              <div class="thumb-placeholder mono">[ THINKERDEV ]</div>
+              <img src="assets/proj-thinkerdev.jpg" alt="ThinkerDev — AI-powered engineering learning" loading="lazy" onerror="this.remove()" />
+              <div class="project__overlay"><span class="mono">VISIT LIVE SITE &#8599;</span></div>
             </div>
             <div class="project__info">
-              <span class="project__index mono acid">TX_05</span>
+              <span class="project__index mono acid">TX_04</span>
               <h3 class="project__name">THINKERDEV</h3>
-              <p class="project__desc">AI-powered engineering learning platform — learn to build like an engineer with intelligence guiding every step.</p>
+              <p class="project__desc">AI coding trainer that teaches you to code like an engineer, one pattern at a time &#8212; tiny concepts, short tasks, AI guidance, reusable patterns.</p>
               <div class="project__tags mono">
-                <span>AI</span><span>EDTECH</span><span>PLATFORM</span>
+                <span>AI</span><span>EDTECH</span><span>NEXT.JS</span>
               </div>
             </div>
           </a>
         </article>
 
         <article class="project project--offset reveal" data-hover>
-          <a href="https://project-3e7jp.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="WeatherMe">
+          <a href="https://bountixx.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="Bountixx">
             <div class="project-thumb">
-              <div class="thumb-placeholder mono">[ WEATHERME — SCREENSHOT ]</div>
-              <div class="project__overlay"><span class="mono">VISIT LIVE SITE ↗</span></div>
+              <div class="thumb-placeholder mono">[ BOUNTIXX ]</div>
+              <img src="assets/proj-bountixx.jpg" alt="Bountixx — drop a challenge, claim the bounty" loading="lazy" onerror="this.remove()" />
+              <div class="project__overlay"><span class="mono">VISIT LIVE SITE &#8599;</span></div>
             </div>
             <div class="project__info">
-              <span class="project__index mono acid">TX_06</span>
-              <h3 class="project__name">WEATHERME</h3>
-              <p class="project__desc">Live weather conditions for any location on Earth — clean, fast, API-driven.</p>
+              <span class="project__index mono acid">TX_05</span>
+              <h3 class="project__name">BOUNTIXX</h3>
+              <p class="project__desc">Drop a challenge, claim the bounty &#8212; gamified developer battles where the AI referees and the winner takes all.</p>
               <div class="project__tags mono">
-                <span>JAVASCRIPT</span><span>REST API</span><span>FRONTEND</span>
+                <span>NEXT.JS</span><span>GAMIFICATION</span><span>AI JUDGE</span>
               </div>
             </div>
           </a>
@@ -384,42 +394,67 @@
         <h2 class="section__title">THE<br /><span class="outline">JOURNEY</span></h2>
       </div>
 
-      <div class="timeline">
-        <!-- ▼ EDIT: refine dates/details as you like ▼ -->
-        <div class="timeline__item reveal" data-hover>
-          <span class="timeline__date mono acid">NOW</span>
-          <div class="timeline__body">
-            <h3>Building Syniq / Flowfex — AI Native Engineer</h3>
-            <p>Shipping a visual agent-orchestration platform while engineering AI-first products end to end — frontend, backend and the intelligence in between.</p>
+      <div class="journey__grid">
+        <div class="timeline">
+          <div class="timeline__item reveal" data-hover>
+            <span class="timeline__date mono acid">NOW</span>
+            <div class="timeline__body">
+              <h3>AI Native Engineer Intern — Periculum</h3>
+              <p>Interning as an AI Native Engineer at <a href="https://periculum.io" target="_blank" rel="noopener" class="acid-link" data-hover>periculum.io</a>, Lagos' data-analytics &amp; credit-intelligence company — LLM workflows, automation systems and intelligent product features. Since 02/2026.</p>
+            </div>
+          </div>
+          <div class="timeline__item reveal" data-hover>
+            <span class="timeline__date mono acid">2025</span>
+            <div class="timeline__body">
+              <h3>Engineering Intern — Learn2Earn</h3>
+              <p>Backend internship on a learn-and-earn platform — Go-powered services, APIs and reward logic that turn knowledge gained into value earned.</p>
+            </div>
+          </div>
+          <div class="timeline__item reveal" data-hover>
+            <span class="timeline__date mono acid">2025</span>
+            <div class="timeline__body">
+              <h3>ND Computer Science — Yaba College of Technology</h3>
+              <p>Exco of <strong>NITHUB – YABATECH</strong>, serving as the link between students and the broader innovation ecosystem. <strong>Cowrywise campus ambassador</strong>. Capstone project in Java.</p>
+            </div>
+          </div>
+          <div class="timeline__item reveal" data-hover>
+            <span class="timeline__date mono acid">2024</span>
+            <div class="timeline__body">
+              <h3>BSc Software Engineering — BYU–Idaho</h3>
+              <p>Recipient of the <strong>Herbert J. Grant scholarship</strong> — studying software engineering across the Atlantic while shipping products from Lagos.</p>
+            </div>
+          </div>
+          <div class="timeline__item reveal" data-hover>
+            <span class="timeline__date mono acid">ORIGIN</span>
+            <div class="timeline__body">
+              <h3>First line of code</h3>
+              <p>Started with the web — HTML, CSS and raw curiosity — and that curiosity grew into a mission: engineering intelligence that people can actually use.</p>
+            </div>
           </div>
         </div>
-        <div class="timeline__item reveal" data-hover>
-          <span class="timeline__date mono acid">2026</span>
-          <div class="timeline__body">
-            <h3>Open-source &amp; Web3 contributor — Stellar ecosystem</h3>
-            <p>Contributing across the Stellar/Soroban ecosystem: borderless payroll (AfriWage), pet-adoption escrow (PetAd), token vesting (VestFlow), mobile-money bridges and more.</p>
+
+        <aside class="journey__photo reveal" data-hover>
+          <!-- ▼ save your office-chair photo as assets/me-2.jpg ▼ -->
+          <div class="photo-frame">
+            <div class="photo-placeholder">
+              <span class="mono">[ PHOTO LOADING… ]</span>
+              <span class="photo-placeholder__hint mono">save photo as<br />assets/me-2.jpg</span>
+            </div>
+            <img src="assets/me-2.jpg" alt="Joseph at work — NITHUB, Yabatech" onerror="this.remove()" />
+            <div class="photo-frame__tag mono">FIG 2.0 — IN THE FIELD · NITHUB</div>
           </div>
-        </div>
-        <div class="timeline__item reveal" data-hover>
-          <span class="timeline__date mono acid">2025</span>
-          <div class="timeline__body">
-            <h3>Deep dive into agentic AI</h3>
-            <p>Built an engine-agnostic agent swarm orchestrating 250+ specialists, studied the Claude Code architecture file by file, and made AI-assisted development my default workflow.</p>
-          </div>
-        </div>
-        <div class="timeline__item reveal" data-hover>
-          <span class="timeline__date mono acid">ORIGIN</span>
-          <div class="timeline__body">
-            <h3>First line of code</h3>
-            <p>Started with the web — HTML, CSS and curiosity — then kept going until the software started thinking back.</p>
-          </div>
-        </div>
+        </aside>
       </div>
     </section>
 
     <!-- ============ CONTACT ============ -->
     <section class="section contact" id="contact">
       <div class="contact__inner">
+        <div class="contact__portrait reveal" data-hover>
+          <!-- ▼ save your denim low-angle photo as assets/me-3.jpg ▼ -->
+          <img src="assets/me-3.jpg" alt="Joseph Chijioke Emmanuel" onerror="this.parentElement.remove()" />
+          <span class="contact__portrait-tag mono">FIG 3.0 — THE FUTURE</span>
+        </div>
         <p class="mono contact__pre reveal"><span class="pulse-dot"></span> SIGNAL CHANNEL OPEN — RESPONSE TIME: FAST</p>
         <h2 class="contact__title reveal">
           LET'S BUILD<br /><span class="outline">THE FUTURE</span><span class="acid">.</span>
@@ -430,11 +465,10 @@
         </a>
 
         <div class="contact__socials reveal">
-          <!-- ▼ EDIT: add/replace your real social links ▼ -->
           <a href="https://github.com/Cjay-Cyber-2" target="_blank" rel="noopener" class="social-pill mono" data-hover data-magnetic>GITHUB ↗</a>
-          <a href="#" class="social-pill mono" data-hover data-magnetic>LINKEDIN ↗</a>
-          <a href="#" class="social-pill mono" data-hover data-magnetic>X / TWITTER ↗</a>
-          <a href="#" class="social-pill mono" data-hover data-magnetic>RESUME ↓</a>
+          <a href="https://www.linkedin.com/in/chijioke-joseph-42530a2ab" target="_blank" rel="noopener" class="social-pill mono" data-hover data-magnetic>LINKEDIN ↗</a>
+          <a href="https://x.com/Cjay_Cyber_2" target="_blank" rel="noopener" class="social-pill mono" data-hover data-magnetic>X / TWITTER ↗</a>
+          <a href="assets/Chijioke_Joseph_CV.pdf" target="_blank" rel="noopener" class="social-pill mono" data-hover data-magnetic>VIEW CV ↓</a>
         </div>
       </div>
     </section>
