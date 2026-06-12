@@ -40,7 +40,12 @@
     themeHooks.forEach((fn) => fn(t === "light"));
   }
   document.querySelectorAll(".theme-toggle").forEach((b) =>
-    b.addEventListener("click", () => setTheme(isLight() ? "dark" : "light"))
+    b.addEventListener("click", () => {
+      setTheme(isLight() ? "dark" : "light");
+      b.classList.remove("flipping");
+      void b.offsetWidth; // restart the spin animation
+      b.classList.add("flipping");
+    })
   );
   refreshToggles();
   // ?theme=light|dark — force a theme (handy for sharing/screenshots)
@@ -67,7 +72,7 @@
     const flash = document.getElementById("introFlash");
     const skipBtn = document.getElementById("introSkip");
     const ctx = canvas.getContext("2d");
-    const dpr = Math.min(devicePixelRatio, 1.5);
+    const dpr = Math.min(devicePixelRatio, 1.25);
     const W = innerWidth, H = innerHeight;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
@@ -107,19 +112,19 @@
     octx.fillText(TEXT, W / 2, H / 2);
     const img = octx.getImageData(0, 0, W, H).data;
 
-    const gap = fontSize > 90 ? 4 : 3;
+    const gap = fontSize > 90 ? 5 : 4;
     const targets = [];
     for (let y = 0; y < H; y += gap) {
       for (let x = 0; x < W; x += gap) {
         if (img[(y * W + x) * 4 + 3] > 128) targets.push({ x, y });
       }
     }
-    // shuffle so assembly looks organic, cap for perf
+    // shuffle so assembly looks organic, cap hard for buttery 60fps
     for (let i = targets.length - 1; i > 0; i--) {
       const j = (Math.random() * (i + 1)) | 0;
       [targets[i], targets[j]] = [targets[j], targets[i]];
     }
-    targets.length = Math.min(targets.length, 4200);
+    targets.length = Math.min(targets.length, W < 700 ? 1400 : 2400);
 
     const cx = W / 2, cy = H / 2;
     const parts = targets.map((t) => {
@@ -133,7 +138,8 @@
         x: 0, y: 0, px: 0, py: 0,
         delay: Math.random() * 0.9,
         hot: Math.random() < 0.12,
-        size: 1.2 + Math.random() * 1.6,
+        size: 1.4 + Math.random() * 1.8,
+        jp: Math.random() * Math.PI * 2,
         vx: 0, vy: 0,
         a: 1,
       };
@@ -159,6 +165,7 @@
       navEl.classList.remove("warp");
       document.body.style.overflow = "";
       removeEventListener("keydown", finish);
+      startLivingCore();
     }
     skipBtn.addEventListener("click", finish);
     addEventListener("keydown", finish);
@@ -187,48 +194,59 @@
 
       if (!exploded) {
         // ---- assembly: fly in from the void ----
-        for (const p of parts) {
+        // batched: one shared streak path + two fill passes = few state changes
+        const sinT = Math.sin(t * 7);
+        ctx.strokeStyle = `rgba(${AC}, 0.1)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i < parts.length; i++) {
+          const p = parts[i];
           const lp = Math.min(Math.max((t - p.delay) / T_ASSEMBLE, 0), 1);
           const e = easeOut(lp);
-          const jx = lp === 1 ? (Math.random() - 0.5) * 1.4 : 0;
-          const jy = lp === 1 ? (Math.random() - 0.5) * 1.4 : 0;
-          p.x = p.sx + (p.tx - p.sx) * e + jx;
-          p.y = p.sy + (p.ty - p.sy) * e + jy;
-          // incoming streaks while still travelling
-          if (lp > 0 && lp < 0.92) {
-            ctx.strokeStyle = `rgba(${AC}, ${0.05 + lp * 0.1})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
+          const j = lp === 1 ? Math.sin(sinT + p.jp) * 0.7 : 0;
+          p.x = p.sx + (p.tx - p.sx) * e + j;
+          p.y = p.sy + (p.ty - p.sy) * e - j;
+          if (i % 3 === 0 && lp > 0 && lp < 0.88) {
             ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x + (p.sx - p.tx) * 0.018, p.y + (p.sy - p.ty) * 0.018);
-            ctx.stroke();
+            ctx.lineTo(p.x + (p.sx - p.tx) * 0.02, p.y + (p.sy - p.ty) * 0.02);
           }
-          ctx.fillStyle = p.hot
-            ? `rgba(${IK}, ${0.45 + lp * 0.5})`
-            : `rgba(${AC}, ${0.3 + lp * 0.6})`;
-          ctx.fillRect(p.x, p.y, p.size, p.size);
         }
+        ctx.stroke();
+        ctx.fillStyle = `rgba(${AC}, 0.85)`;
+        for (const p of parts) if (!p.hot) ctx.fillRect(p.x, p.y, p.size, p.size);
+        ctx.fillStyle = `rgba(${IK}, 0.9)`;
+        for (const p of parts) if (p.hot) ctx.fillRect(p.x, p.y, p.size, p.size);
         if (t > 2.6) sub.classList.add("on");
         const pct = Math.min(Math.floor(easeOut(Math.min(t / T_EXPLODE, 1)) * 100), 99);
         percentEl.textContent = `SYNTHESIZING — ${String(pct).padStart(3, "0")}%`;
         if (t >= T_EXPLODE) { percentEl.textContent = "SYNTHESIZING — 100%"; explode(); }
       } else {
-        // ---- detonation: radial blast with motion streaks ----
+        // ---- detonation: radial blast, batched into two stroke passes ----
+        let fade = 1;
         for (const p of parts) {
           p.px = p.x; p.py = p.y;
           p.x += p.vx; p.y += p.vy;
           p.vx *= 1.04; p.vy *= 1.04;
           p.a *= 0.965;
-          if (p.a < 0.02) continue;
-          ctx.strokeStyle = p.hot
-            ? `rgba(${IK}, ${p.a})`
-            : `rgba(${AC}, ${p.a * 0.85})`;
-          ctx.lineWidth = p.size;
-          ctx.beginPath();
+          fade = p.a;
+        }
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(${AC}, ${Math.max(fade * 0.85, 0)})`;
+        ctx.beginPath();
+        for (const p of parts) {
+          if (p.hot || p.a < 0.02) continue;
           ctx.moveTo(p.px - p.vx * 1.6, p.py - p.vy * 1.6);
           ctx.lineTo(p.x, p.y);
-          ctx.stroke();
         }
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(${IK}, ${Math.max(fade, 0)})`;
+        ctx.beginPath();
+        for (const p of parts) {
+          if (!p.hot || p.a < 0.02) continue;
+          ctx.moveTo(p.px - p.vx * 1.6, p.py - p.vy * 1.6);
+          ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
         // shockwave rings
         for (const ring of rings) {
           ring.r += Math.max(W, H) * 0.045;
@@ -247,6 +265,7 @@
           mainEl.classList.remove("warp");
           navEl.classList.remove("warp");
           document.body.style.overflow = "";
+          startLivingCore(); // boot the 3D core only now — it never competes with the intro
         }
         if (t >= T_END) finish();
       }
@@ -273,7 +292,7 @@
     camera.position.z = 14;
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.setSize(innerWidth, innerHeight);
 
     // ---- 3D simplex noise (Ashima / IQ) shared by both shaders ----
@@ -514,7 +533,14 @@
     }
     animate();
   }
-  initLivingCore();
+  // the intro starts the core when it finishes; without an intro, start now
+  let coreStarted = false;
+  function startLivingCore() {
+    if (coreStarted) return;
+    coreStarted = true;
+    initLivingCore();
+  }
+  if (reducedMotion || auditMode) startLivingCore();
 
   /* ============ PLASMA CURSOR — comet trail + sparks ============ */
   function initPlasmaCursor() {

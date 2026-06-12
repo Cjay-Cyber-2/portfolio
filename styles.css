@@ -160,11 +160,12 @@ a { color: inherit; text-decoration: none; }
   color: var(--bone-dim);
   transition: opacity 0.4s;
 }
-/* the site warps in from hyperspace as the intro dissolves */
+/* the site warps in as the intro dissolves — transform/opacity only,
+   so it stays on the GPU compositor and never janks */
 main, .nav {
-  transition: transform 1s var(--ease-out), filter 1s var(--ease-out), opacity 1s var(--ease-out);
+  transition: transform 1s var(--ease-out), opacity 1s var(--ease-out);
 }
-main.warp { transform: scale(1.07); filter: blur(12px); opacity: 0.3; }
+main.warp { transform: scale(1.06); opacity: 0; }
 .nav.warp { opacity: 0; transform: translateY(-12px); }
 .intro__skip {
   position: absolute;
@@ -243,20 +244,42 @@ main.warp { transform: scale(1.07); filter: blur(12px); opacity: 0.3; }
 .theme-toggle {
   display: inline-flex; align-items: center; gap: 7px;
   background: none;
-  border: 1px solid var(--line);
+  border: 1px solid var(--acid);
   border-radius: 100px;
-  color: var(--bone-dim);
+  color: var(--acid);
   font-size: 0.62rem;
   letter-spacing: 0.18em;
   padding: 9px 16px;
   cursor: pointer;
-  transition: color 0.25s, border-color 0.25s, background 0.25s;
+  transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.25s var(--ease-out);
+  /* breathe a few times after load so visitors discover it */
+  animation: toggle-hint 2.4s ease 6s 3;
 }
-.theme-toggle:hover { color: var(--acid); border-color: var(--acid); }
-.theme-toggle__icon { font-size: 0.85rem; line-height: 1; }
+.theme-toggle:hover {
+  color: var(--void);
+  background: var(--acid);
+  transform: scale(1.06);
+}
+.theme-toggle__icon {
+  display: inline-block;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.theme-toggle.flipping .theme-toggle__icon { animation: icon-spin 0.6s var(--ease-snap); }
+@keyframes icon-spin {
+  0% { transform: rotate(0) scale(1); }
+  50% { transform: rotate(180deg) scale(0.4); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes toggle-hint {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--acid-rgb), 0.55); }
+  50% { box-shadow: 0 0 0 12px rgba(var(--acid-rgb), 0); }
+}
 .theme-toggle--mobile { font-size: 0.8rem; padding: 13px 26px; }
 @media (max-width: 960px) {
-  .nav .theme-toggle { display: none; }
+  /* compact icon-only pill stays visible next to the burger */
+  .nav .theme-toggle { padding: 9px 11px; }
+  .nav .theme-toggle .theme-toggle__label { display: none; }
 }
 .nav__burger {
   display: none;
@@ -508,7 +531,7 @@ main.warp { transform: scale(1.07); filter: blur(12px); opacity: 0.3; }
   font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(2.4rem, 7vw, 5.5rem);
-  line-height: 1;
+  line-height: 1.18;
   text-transform: uppercase;
   letter-spacing: -0.01em;
 }
@@ -871,7 +894,7 @@ main.warp { transform: scale(1.07); filter: blur(12px); opacity: 0.3; }
   font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(2.8rem, 9vw, 7.5rem);
-  line-height: 0.98;
+  line-height: 1.16;
   text-transform: uppercase;
   margin-bottom: clamp(36px, 6vh, 64px);
 }
