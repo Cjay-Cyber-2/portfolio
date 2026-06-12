@@ -88,7 +88,7 @@
     try {
       await Promise.race([
         document.fonts.load("700 120px 'Clash Display'"),
-        new Promise((r) => setTimeout(r, 700)),
+        new Promise((r) => setTimeout(r, 200)),
       ]);
     } catch (e) { /* fallback font is fine */ }
 
@@ -160,12 +160,17 @@
       if (finished) return;
       finished = true;
       cancelAnimationFrame(raf);
-      intro.classList.add("reveal", "gone");
+      // Add 'reveal' first so the CSS opacity/background transition plays,
+      // then add 'gone' (display:none) only after the fade completes.
+      intro.classList.add("reveal");
       mainEl.classList.remove("warp");
       navEl.classList.remove("warp");
       document.body.style.overflow = "";
       removeEventListener("keydown", finish);
-      startLivingCore();
+      setTimeout(() => intro.classList.add("gone"), 680);
+      // Defer THREE.js init until after the intro fade so it never
+      // competes with an active CSS transition on the main thread.
+      setTimeout(startLivingCore, 700);
     }
     skipBtn.addEventListener("click", finish);
     addEventListener("keydown", finish);
@@ -265,7 +270,9 @@
           mainEl.classList.remove("warp");
           navEl.classList.remove("warp");
           document.body.style.overflow = "";
-          startLivingCore(); // boot the 3D core only now — it never competes with the intro
+          // Defer 3D core until the 1 s warp transition finishes so WebGL
+          // compilation never races the compositor and drops frames.
+          setTimeout(startLivingCore, 1050);
         }
         if (t >= T_END) finish();
       }
