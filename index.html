@@ -51,7 +51,7 @@
       <a href="#contact" data-hover><span class="mono acid">05</span> CONTACT</a>
     </nav>
     <div class="nav__right">
-      <span class="nav__time mono" id="localTime">--:--:--</span>
+      <span class="nav__time mono" id="localTime" title="Portfolio uptime since June 12, 2026">005D 00:00:00</span>
       <button class="theme-toggle mono" data-hover aria-label="Toggle light/dark mode"><span class="theme-toggle__icon">☀</span> <span class="theme-toggle__label">LIGHT</span></button>
       <a href="#contact" class="btn btn--small" data-hover data-magnetic>LET'S TALK</a>
     </div>
@@ -67,6 +67,7 @@
     <a href="#work" class="mobile-menu__link">WORK</a>
     <a href="#journey" class="mobile-menu__link">JOURNEY</a>
     <a href="#contact" class="mobile-menu__link">CONTACT</a>
+    <span class="mobile-menu__uptime mono" id="mobileUptime">UPTIME 005D 00:00:00</span>
     <button class="theme-toggle theme-toggle--mobile mono" aria-label="Toggle light/dark mode"><span class="theme-toggle__icon">☀</span> <span class="theme-toggle__label">LIGHT</span></button>
   </div>
 
@@ -185,7 +186,7 @@
 
           <div class="about__stats reveal">
             <div class="stat" data-hover>
-              <span class="stat__num" data-count="15">0</span><span class="stat__plus acid">+</span>
+              <span class="stat__num" data-count="16">0</span><span class="stat__plus acid">+</span>
               <span class="stat__label mono">PROJECTS BUILT</span>
             </div>
             <div class="stat" data-hover>
@@ -302,6 +303,24 @@
               <p class="project__desc">The skill operating layer for connected agents &#8212; semantic task matching, ranked skill selection and human-approval transparency in one orchestration surface.</p>
               <div class="project__tags mono">
                 <span>AI AGENTS</span><span>ORCHESTRATION</span><span>SEMANTIC SEARCH</span><span>PYTHON</span>
+              </div>
+            </div>
+          </a>
+        </article>
+
+        <article class="project project--current reveal" data-hover>
+          <a href="https://mergepay-web.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="MergePay">
+            <div class="project-thumb">
+              <div class="thumb-placeholder mono">[ MERGEPAY ]</div>
+              <img src="assets/proj-mergepay.jpg" alt="MergePay — Stellar-native group expense settlement" loading="lazy" onerror="this.remove()" />
+              <div class="project__overlay"><span class="mono">VISIT LIVE SITE &#8599;</span></div>
+            </div>
+            <div class="project__info">
+              <span class="project__index mono acid">TX_06 &#8212; IN PROGRESS</span>
+              <h3 class="project__name">MERGEPAY</h3>
+              <p class="project__desc">Split expenses on Stellar, settle instantly &#8212; a group settlement app for friends, roommates and trips with transparent on-chain payments, SEP-10 wallet auth, treasury mode and fiat on/off-ramp via anchors.</p>
+              <div class="project__tags mono">
+                <span>STELLAR</span><span>NEXT.JS</span><span>FINTECH</span><span>WEB3</span>
               </div>
             </div>
           </a>
