@@ -9,6 +9,11 @@
 
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const isMobile = window.matchMedia("(max-width: 960px), (pointer: coarse)").matches;
+  if (isMobile) document.documentElement.classList.add("mobile-lite");
+  document.addEventListener("visibilitychange", () => {
+    document.documentElement.classList.toggle("is-paused", document.hidden);
+  });
   // ?audit — skip entrance animations (handy for screenshots / PDF export)
   const auditMode = new URLSearchParams(location.search).has("audit");
   if (auditMode) {
@@ -72,7 +77,7 @@
     const flash = document.getElementById("introFlash");
     const skipBtn = document.getElementById("introSkip");
     const ctx = canvas.getContext("2d");
-    const dpr = Math.min(devicePixelRatio, 1.25);
+    const dpr = Math.min(devicePixelRatio, isMobile ? 1 : 1.25);
     const W = innerWidth, H = innerHeight;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
@@ -112,7 +117,7 @@
     octx.fillText(TEXT, W / 2, H / 2);
     const img = octx.getImageData(0, 0, W, H).data;
 
-    const gap = fontSize > 90 ? 5 : 4;
+    const gap = isMobile ? 6 : fontSize > 90 ? 5 : 4;
     const targets = [];
     for (let y = 0; y < H; y += gap) {
       for (let x = 0; x < W; x += gap) {
@@ -124,7 +129,7 @@
       const j = (Math.random() * (i + 1)) | 0;
       [targets[i], targets[j]] = [targets[j], targets[i]];
     }
-    targets.length = Math.min(targets.length, W < 700 ? 1400 : 2400);
+    targets.length = Math.min(targets.length, isMobile ? 650 : W < 700 ? 1000 : 2400);
 
     const cx = W / 2, cy = H / 2;
     const parts = targets.map((t) => {
@@ -284,7 +289,7 @@
   /* ============ LIVING CORE — GLSL energy organism ============ */
   async function initLivingCore() {
     const canvas = document.getElementById("neural-canvas");
-    if (!canvas || reducedMotion) return;
+    if (!canvas || reducedMotion || isMobile) return;
 
     let THREE;
     try {
@@ -746,13 +751,15 @@
   }
 
   /* ============ SKILL CARD GLOW FOLLOWS MOUSE ============ */
-  document.querySelectorAll(".skill-card").forEach((card) => {
-    card.addEventListener("pointermove", (e) => {
-      const r = card.getBoundingClientRect();
-      card.style.setProperty("--mx", `${e.clientX - r.left}px`);
-      card.style.setProperty("--my", `${e.clientY - r.top}px`);
+  if (finePointer) {
+    document.querySelectorAll(".skill-card").forEach((card) => {
+      card.addEventListener("pointermove", (e) => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        card.style.setProperty("--my", `${e.clientY - r.top}px`);
+      });
     });
-  });
+  }
 
   /* ============ SCROLL REVEALS ============ */
   const revealObserver = new IntersectionObserver(
@@ -793,11 +800,17 @@
   /* ============ NAV: hide on scroll down, glass on scroll ============ */
   const nav = document.getElementById("nav");
   let lastY = 0;
+  let scrollTicking = false;
   addEventListener("scroll", () => {
-    const y = scrollY;
-    nav.classList.toggle("is-scrolled", y > 40);
-    nav.classList.toggle("is-hidden", y > lastY && y > 500);
-    lastY = y;
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(() => {
+      const y = scrollY;
+      nav.classList.toggle("is-scrolled", y > 40);
+      nav.classList.toggle("is-hidden", y > lastY && y > 500);
+      lastY = y;
+      scrollTicking = false;
+    });
   }, { passive: true });
 
   /* ============ MOBILE MENU ============ */
@@ -816,15 +829,30 @@
     })
   );
 
-  /* ============ LIVE CLOCK + YEAR ============ */
+  /* ============ PORTFOLIO UPTIME — counts up from launch ============ */
+  const PORTFOLIO_EPOCH = new Date("2026-06-12T13:56:31Z").getTime();
   const timeEl = document.getElementById("localTime");
-  function tickClock() {
-    if (timeEl) {
-      timeEl.textContent = new Date().toLocaleTimeString("en-GB", { hour12: false });
-    }
+  const pad2 = (n) => String(n).padStart(2, "0");
+  function tickUptime() {
+    if (!timeEl) return;
+    const elapsed = Math.max(0, Date.now() - PORTFOLIO_EPOCH);
+    const totalSec = Math.floor(elapsed / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const hrs = Math.floor((totalSec % 86400) / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    timeEl.textContent = `${String(days).padStart(3, "0")}D ${pad2(hrs)}:${pad2(mins)}:${pad2(secs)}`;
   }
-  tickClock();
-  setInterval(tickClock, 1000);
+  tickUptime();
+  setInterval(tickUptime, 1000);
+  const mobileUptime = document.getElementById("mobileUptime");
+  if (mobileUptime) {
+    const syncMobileUptime = () => {
+      if (timeEl) mobileUptime.textContent = `UPTIME ${timeEl.textContent}`;
+    };
+    syncMobileUptime();
+    setInterval(syncMobileUptime, 1000);
+  }
 
   const year = new Date().getFullYear();
   const footerYear = document.getElementById("footerYear");

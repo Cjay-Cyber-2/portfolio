@@ -243,7 +243,7 @@ main.warp { transform: scale(1.06); opacity: 0; }
 .nav__links a:hover { color: var(--bone); }
 .nav__links a:hover::after { width: 100%; }
 .nav__right { display: flex; align-items: center; gap: 22px; }
-.nav__time { font-size: 0.72rem; color: var(--bone-dim); letter-spacing: 0.1em; }
+.nav__time { font-size: 0.72rem; color: var(--bone-dim); letter-spacing: 0.1em; white-space: nowrap; }
 .theme-toggle {
   display: inline-flex; align-items: center; gap: 7px;
   background: none;
@@ -316,6 +316,12 @@ main.warp { transform: scale(1.06); opacity: 0; }
   transition: color 0.25s;
 }
 .mobile-menu__link:hover { color: var(--acid); }
+.mobile-menu__uptime {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: var(--bone-dim);
+  margin-top: -4vh;
+}
 
 /* ============ BUTTONS ============ */
 .btn {
@@ -511,6 +517,15 @@ main.warp { transform: scale(1.06); opacity: 0; }
 }
 @keyframes marquee { to { transform: translateX(-50%); } }
 .marquee:hover .marquee__track { animation-play-state: paused; }
+html.is-paused .marquee__track,
+html.is-paused .skills__ticker span,
+html.is-paused .grain,
+html.is-paused .pulse-dot,
+html.is-paused .project--current .project__index {
+  animation-play-state: paused;
+}
+html.mobile-lite .marquee__track { animation-duration: 36s; }
+html.mobile-lite .skills__ticker span { animation-duration: 28s; }
 
 /* ============ SECTIONS (shared) ============ */
 .section {
@@ -741,6 +756,11 @@ main.warp { transform: scale(1.06); opacity: 0; }
 }
 .project--offset { transform: translateY(60px); }
 .project--offset.is-visible { transform: translateY(60px); }
+.project--current .project__index { animation: pulse-text 2.4s ease-in-out infinite; }
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
 .project__link { display: block; }
 .project-thumb {
   position: relative;
@@ -969,7 +989,8 @@ main.warp { transform: scale(1.06); opacity: 0; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 960px) {
-  .nav__links, .nav__time { display: none; }
+  .nav__links { display: none; }
+  .nav__time { display: inline; font-size: 0.58rem; letter-spacing: 0.08em; max-width: 42vw; overflow: hidden; text-overflow: ellipsis; }
   .nav__burger { display: flex; }
   .about__grid { grid-template-columns: 1fr; }
   .about__photo { max-width: 420px; }
@@ -978,12 +999,29 @@ main.warp { transform: scale(1.06); opacity: 0; }
   .project--feature .project__link { grid-template-columns: 1fr; gap: 18px; }
   .journey__grid { grid-template-columns: 1fr; }
   .journey__photo { position: static; max-width: 420px; }
-  #neural-canvas { opacity: 0.55; }
+  #neural-canvas { opacity: 0.55; display: none; }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 90% 70% at 75% 35%, rgba(var(--acid-rgb), 0.1), transparent 65%),
+      radial-gradient(ellipse 60% 50% at 20% 80%, rgba(var(--acid-rgb), 0.04), transparent);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .grain { animation: none; opacity: 0.035; }
+  .glitch::before, .glitch::after { content: none; animation: none; }
+  .nav.is-scrolled { backdrop-filter: none; background: rgba(var(--void-rgb), 0.94); }
+  .hero__status { backdrop-filter: none; }
+  html.mobile-lite .hero__line-inner { animation-duration: 0.9s; }
+  .project__link { will-change: auto; }
   .timeline__item { grid-template-columns: 1fr; gap: 8px; }
   .hero__scroll { display: none; }
 }
 @media (max-width: 560px) {
   .nav__right .btn { display: none; }
+  .nav__time { max-width: 36vw; font-size: 0.52rem; }
   .hero { padding-top: 104px; padding-bottom: 70px; }
   .hero__cta { gap: 12px; }
   .hero__cta .btn { padding: 14px 22px; font-size: 0.7rem; }
