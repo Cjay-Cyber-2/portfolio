@@ -480,27 +480,10 @@
     }));
     scene.add(starField, galaxy, coreGroup);
 
-    // ---- shooting stars — realistic acid/bone streaks from every direction ----
+    // ---- shooting stars — luminous trails only, no floating dots ----
     const comets = [];
     const cometBlend = () => (isLight() ? THREE.NormalBlending : THREE.AdditiveBlending);
     let nextCometAt = 1.8;
-    let glowTex;
-
-    function makeGlowTexture() {
-      const c = document.createElement("canvas");
-      c.width = c.height = 128;
-      const ctx = c.getContext("2d");
-      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      g.addColorStop(0, "rgba(255,255,255,1)");
-      g.addColorStop(0.12, "rgba(198,255,0,0.95)");
-      g.addColorStop(0.38, "rgba(198,255,0,0.28)");
-      g.addColorStop(1, "rgba(198,255,0,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 128, 128);
-      const tex = new THREE.CanvasTexture(c);
-      tex.needsUpdate = true;
-      return tex;
-    }
 
     function randomUnitVector() {
       const u = Math.random(), v = Math.random();
@@ -513,14 +496,17 @@
       };
     }
 
-    function buildCometColors(TRAIL, light) {
+    function buildCometColors(TRAIL, light, strength = 1) {
       const colors = new Float32Array(TRAIL * 3);
       const acid = new THREE.Color(light ? 0x5c7c0a : 0xc6ff00);
       const bone = new THREE.Color(light ? 0x131310 : 0xf2f0ea);
+      const white = new THREE.Color(1, 1, 1);
       for (let i = 0; i < TRAIL; i++) {
         const t = i / Math.max(TRAIL - 1, 1);
-        const c = acid.clone().lerp(bone, Math.pow(t, 0.45));
-        const fade = Math.pow(1 - t, 2.1);
+        const c = i < 3
+          ? white.clone().lerp(acid, t * 3)
+          : acid.clone().lerp(bone, Math.pow(t, 0.35));
+        const fade = Math.pow(1 - t, 2.6) * strength;
         colors[i * 3] = c.r * fade;
         colors[i * 3 + 1] = c.g * fade;
         colors[i * 3 + 2] = c.b * fade;
@@ -530,8 +516,8 @@
 
     function spawnComet() {
       const dir = randomUnitVector();
-      const speed = 22 + Math.random() * 24;
-      const spawnR = 34 + Math.random() * 14;
+      const speed = 24 + Math.random() * 26;
+      const spawnR = 36 + Math.random() * 14;
       const x = -dir.x * spawnR + (Math.random() - 0.5) * 2.5;
       const y = -dir.y * spawnR + (Math.random() - 0.5) * 2.5;
       const z = -dir.z * spawnR + (Math.random() - 0.5) * 2.5;
@@ -539,83 +525,58 @@
       const vy = dir.y * speed;
       const vz = dir.z * speed;
 
-      const TRAIL = isMobile ? 22 : 34;
+      const TRAIL = isMobile ? 42 : 68;
       const pos = new Float32Array(TRAIL * 3);
-      const colors = buildCometColors(TRAIL, isLight());
+      const colors = buildCometColors(TRAIL, isLight(), 1);
+      const haloColors = buildCometColors(TRAIL, isLight(), 0.42);
       for (let i = 0; i < TRAIL; i++) {
         pos[i * 3] = x;
         pos[i * 3 + 1] = y;
         pos[i * 3 + 2] = z;
       }
       const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      const posAttr = new THREE.BufferAttribute(pos, 3);
+      geo.setAttribute("position", posAttr);
       geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-      const acidCol = isLight() ? 0x5c7c0a : 0xc6ff00;
-      const boneCol = isLight() ? 0x131310 : 0xf2f0ea;
       const blend = cometBlend();
 
-      if (!glowTex) glowTex = makeGlowTexture();
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: glowTex,
-        color: acidCol,
-        transparent: true,
-        opacity: isLight() ? 0.55 : 0.92,
-        blending: blend,
-        depthWrite: false,
-      }));
-      const glowScale = 1.4 + Math.random() * 0.9;
-      glow.scale.set(glowScale, glowScale * 0.55, 1);
-      glow.position.set(x, y, z);
+      const haloGeo = new THREE.BufferGeometry();
+      haloGeo.setAttribute("position", posAttr);
+      haloGeo.setAttribute("color", new THREE.BufferAttribute(haloColors, 3));
 
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.09, 8, 8),
-        new THREE.MeshBasicMaterial({
-          color: boneCol,
+      const halo = new THREE.Line(
+        haloGeo,
+        new THREE.LineBasicMaterial({
+          vertexColors: true,
           transparent: true,
-          opacity: 1,
-          blending: blend,
+          opacity: isLight() ? 0.35 : 0.55,
+          blending: THREE.AdditiveBlending,
           depthWrite: false,
         })
       );
-      head.position.set(x, y, z);
-
-      const core = new THREE.Mesh(
-        new THREE.SphereGeometry(0.05, 6, 6),
-        new THREE.MeshBasicMaterial({
-          color: acidCol,
-          transparent: true,
-          opacity: 1,
-          blending: blend,
-          depthWrite: false,
-        })
-      );
-      core.position.set(x, y, z);
 
       const tail = new THREE.Line(
         geo,
         new THREE.LineBasicMaterial({
           vertexColors: true,
           transparent: true,
-          opacity: isLight() ? 0.88 : 1,
+          opacity: isLight() ? 0.92 : 1,
           blending: blend,
           depthWrite: false,
         })
       );
-      scene.add(glow, head, core, tail);
+      scene.add(halo, tail);
       comets.push({
-        glow, head, core, tail, pos, colors,
+        halo, tail, pos, colors, haloColors,
         x, y, z, vx, vy, vz, TRAIL,
-        traveled: 0, maxTravel: 78 + Math.random() * 24,
+        traveled: 0, maxTravel: 82 + Math.random() * 28,
       });
     }
 
     function disposeComet(c) {
-      scene.remove(c.glow, c.head, c.core, c.tail);
-      c.glow.material.dispose();
-      c.head.geometry.dispose();
-      c.head.material.dispose();
-      c.core.geometry.dispose();
-      c.core.material.dispose();
+      scene.remove(c.halo, c.tail);
+      c.halo.geometry.dispose();
+      c.halo.material.dispose();
       c.tail.geometry.dispose();
       c.tail.material.dispose();
     }
@@ -627,9 +588,6 @@
         c.y += c.vy * dt;
         c.z += c.vz * dt;
         c.traveled += Math.hypot(c.vx, c.vy, c.vz) * dt;
-        c.glow.position.set(c.x, c.y, c.z);
-        c.head.position.set(c.x, c.y, c.z);
-        c.core.position.set(c.x, c.y, c.z);
         for (let j = c.TRAIL - 1; j > 0; j--) {
           c.pos[j * 3] = c.pos[(j - 1) * 3];
           c.pos[j * 3 + 1] = c.pos[(j - 1) * 3 + 1];
@@ -639,6 +597,7 @@
         c.pos[1] = c.y;
         c.pos[2] = c.z;
         c.tail.geometry.attributes.position.needsUpdate = true;
+        c.halo.geometry.attributes.position.needsUpdate = true;
         if (c.traveled > c.maxTravel || Math.abs(c.x) > 48 || Math.abs(c.y) > 48 || Math.abs(c.z) > 48) {
           disposeComet(c);
           comets.splice(i, 1);
@@ -647,22 +606,17 @@
     }
 
     function applyCometTheme(light) {
-      const acid = light ? 0x5c7c0a : 0xc6ff00;
-      const bone = light ? 0x131310 : 0xf2f0ea;
       const blend = light ? THREE.NormalBlending : THREE.AdditiveBlending;
       comets.forEach((c) => {
-        const next = buildCometColors(c.TRAIL, light);
+        const next = buildCometColors(c.TRAIL, light, 1);
+        const haloNext = buildCometColors(c.TRAIL, light, 0.42);
         c.colors.set(next);
+        c.haloColors.set(haloNext);
         c.tail.geometry.attributes.color.needsUpdate = true;
+        c.halo.geometry.attributes.color.needsUpdate = true;
         c.tail.material.blending = blend;
-        c.tail.material.opacity = light ? 0.88 : 1;
-        c.glow.material.color.set(acid);
-        c.glow.material.blending = blend;
-        c.glow.material.opacity = light ? 0.55 : 0.92;
-        c.head.material.color.set(bone);
-        c.head.material.blending = blend;
-        c.core.material.color.set(acid);
-        c.core.material.blending = blend;
+        c.tail.material.opacity = light ? 0.92 : 1;
+        c.halo.material.opacity = light ? 0.35 : 0.55;
       });
     }
 
@@ -1081,143 +1035,6 @@
     syncMobileUptime();
     setInterval(syncMobileUptime, 1000);
   }
-
-  /* ============ ARSENAL REACTOR — live signal viz (not a marquee) ============ */
-  function initSkillsReactor() {
-    const canvas = document.getElementById("skills-reactor-canvas");
-    const hzEl = document.getElementById("reactorHz");
-    if (!canvas || reducedMotion) return;
-
-    const ctx = canvas.getContext("2d");
-    const COLS = isMobile ? 18 : 32;
-    const nodes = Array.from({ length: COLS }, (_, i) => ({
-      x: 0,
-      base: 0.35 + Math.random() * 0.45,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.8 + Math.random() * 1.6,
-      amp: 0.08 + Math.random() * 0.22,
-    }));
-    const sparks = Array.from({ length: isMobile ? 14 : 28 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      vx: (Math.random() - 0.5) * 0.0008,
-      vy: (Math.random() - 0.5) * 0.0006,
-      life: Math.random(),
-    }));
-    let w = 0, h = 0, dpr = 1, visible = false, raf = 0, t0 = 0;
-
-    function palette() {
-      const light = isLight();
-      return {
-        acid: light ? "rgb(92,124,10)" : "rgb(198,255,0)",
-        bone: light ? "rgba(19,19,16,0.55)" : "rgba(242,240,234,0.35)",
-        dim: light ? "rgba(107,106,94,0.35)" : "rgba(155,153,143,0.28)",
-        glow: light ? "rgba(92,124,10,0.18)" : "rgba(198,255,0,0.22)",
-      };
-    }
-
-    function resize() {
-      dpr = Math.min(devicePixelRatio, isMobile ? 1.25 : 1.75);
-      const r = canvas.getBoundingClientRect();
-      w = Math.max(1, r.width);
-      h = Math.max(1, r.height);
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      nodes.forEach((n, i) => { n.x = (i + 0.5) / COLS; });
-    }
-
-    function draw(now) {
-      if (!visible || document.hidden) {
-        raf = requestAnimationFrame(draw);
-        return;
-      }
-      const t = (now - t0) * 0.001;
-      const p = palette();
-      ctx.clearRect(0, 0, w, h);
-
-      ctx.strokeStyle = p.dim;
-      ctx.lineWidth = 1;
-      for (let y = 0.22; y < 0.92; y += 0.18) {
-        ctx.beginPath();
-        ctx.moveTo(0, h * y);
-        ctx.lineTo(w, h * y);
-        ctx.stroke();
-      }
-
-      const waveY = [];
-      nodes.forEach((n, i) => {
-        const x = n.x * w;
-        const y = h * (n.base + Math.sin(t * n.speed + n.phase) * n.amp);
-        waveY[i] = y;
-        ctx.fillStyle = p.glow;
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = p.acid;
-        ctx.beginPath();
-        ctx.arc(x, y, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.beginPath();
-      ctx.moveTo(0, waveY[0]);
-      for (let i = 1; i < waveY.length; i++) {
-        const x0 = nodes[i - 1].x * w;
-        const x1 = nodes[i].x * w;
-        const cx = (x0 + x1) / 2;
-        ctx.bezierCurveTo(cx, waveY[i - 1], cx, waveY[i], x1, waveY[i]);
-      }
-      ctx.strokeStyle = p.acid;
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = p.acid;
-      ctx.shadowBlur = isLight() ? 4 : 14;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      ctx.strokeStyle = p.bone;
-      ctx.lineWidth = 1;
-      for (let i = 0; i < nodes.length - 1; i++) {
-        if (i % 3 !== 0) continue;
-        ctx.beginPath();
-        ctx.moveTo(nodes[i].x * w, waveY[i]);
-        ctx.lineTo(nodes[i + 1].x * w, waveY[i + 1] - 18 - Math.sin(t * 2 + i) * 8);
-        ctx.stroke();
-      }
-
-      sparks.forEach((s) => {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.life += 0.012;
-        if (s.x < 0 || s.x > 1 || s.y < 0 || s.y > 1 || s.life > 1) {
-          s.x = Math.random();
-          s.y = Math.random();
-          s.life = 0;
-        }
-        ctx.fillStyle = p.acid;
-        ctx.globalAlpha = (1 - s.life) * 0.65;
-        ctx.fillRect(s.x * w, s.y * h, 2, 2);
-      });
-      ctx.globalAlpha = 1;
-
-      if (hzEl && Math.floor(t * 4) % 4 === 0) {
-        hzEl.textContent = String(42 + ((Math.sin(t * 3.7) + 1) * 14) | 0);
-      }
-
-      raf = requestAnimationFrame(draw);
-    }
-
-    resize();
-    addEventListener("resize", resize);
-    const reactor = canvas.closest(".skills__reactor");
-    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; })
-      .observe(reactor || canvas);
-    visible = true;
-    t0 = performance.now();
-    raf = requestAnimationFrame(draw);
-    themeHooks.push(() => { /* palette reads live theme each frame */ });
-  }
-  initSkillsReactor();
 
   const year = new Date().getFullYear();
   const footerYear = document.getElementById("footerYear");
