@@ -999,7 +999,7 @@ html.mobile-lite .skills__ticker span { animation-duration: 28s; }
   .project--feature .project__link { grid-template-columns: 1fr; gap: 18px; }
   .journey__grid { grid-template-columns: 1fr; }
   .journey__photo { position: static; max-width: 420px; }
-  #neural-canvas { opacity: 0.55; display: none; }
+  #neural-canvas { opacity: 0.55; }
   .hero::before {
     content: "";
     position: absolute;
