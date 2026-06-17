@@ -518,7 +518,6 @@ main.warp { transform: scale(1.06); opacity: 0; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 .marquee:hover .marquee__track { animation-play-state: paused; }
 html.is-paused .marquee__track,
-html.is-paused .skills__reactor-scan,
 html.is-paused .grain,
 html.is-paused .pulse-dot,
 html.is-paused .project--current .project__index {
@@ -728,59 +727,81 @@ html.mobile-lite .marquee__track { animation-duration: 36s; }
 .skill-card li::before { content: "▸ "; color: var(--acid); }
 .skill-card li:hover { color: var(--bone); padding-left: 6px; }
 
-.skills__reactor {
+.skills__dossier {
   margin-top: 56px;
   border: 1px solid var(--line);
-  position: relative;
-  height: clamp(108px, 14vw, 148px);
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, var(--void-2), var(--void)),
-    repeating-linear-gradient(90deg, transparent 0 39px, rgba(var(--bone-rgb), 0.03) 39px 40px);
+  background: linear-gradient(160deg, var(--void-2), var(--void));
+  padding: clamp(28px, 4vw, 40px);
 }
-.skills__reactor canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.dossier__head { margin-bottom: clamp(24px, 4vw, 36px); }
+.dossier__head .acid {
   display: block;
-}
-.skills__reactor-scan {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, transparent, var(--acid), transparent);
-  box-shadow: 0 0 22px rgba(var(--acid-rgb), 0.55);
-  animation: reactor-scan 4.6s linear infinite;
-  opacity: 0.75;
-  pointer-events: none;
-  z-index: 2;
-}
-@keyframes reactor-scan {
-  from { left: -3%; }
-  to { left: 103%; }
-}
-.skills__reactor-label {
-  position: absolute;
-  bottom: 12px;
-  left: 16px;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   letter-spacing: 0.24em;
-  color: var(--bone-dim);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 3;
-  pointer-events: none;
+  margin-bottom: 12px;
 }
-.skills__reactor::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 55%, rgba(var(--void-rgb), 0.85));
-  pointer-events: none;
-  z-index: 1;
+.dossier__lede {
+  max-width: 62ch;
+  color: var(--bone-dim);
+  font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+  line-height: 1.65;
+}
+.dossier__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.dossier__item {
+  border: 1px solid var(--line);
+  background: rgba(var(--void-rgb), 0.45);
+  padding: 18px 20px;
+  transition: border-color 0.35s, transform 0.35s var(--ease-out);
+}
+.dossier__item:hover {
+  border-color: rgba(var(--acid-rgb), 0.35);
+  transform: translateY(-3px);
+}
+.dossier__key {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: var(--acid);
+  margin-bottom: 10px;
+}
+.dossier__item p {
+  color: var(--bone-dim);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+.dossier__item strong { color: var(--bone); font-weight: 600; }
+.dossier__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.dossier__chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  color: var(--bone-dim);
+  transition: border-color 0.3s, color 0.3s, background 0.3s;
+}
+.dossier__chip:hover {
+  border-color: rgba(var(--acid-rgb), 0.45);
+  color: var(--bone);
+}
+.dossier__chip--primary {
+  border-color: rgba(var(--acid-rgb), 0.55);
+  background: rgba(var(--acid-rgb), 0.1);
+  color: var(--acid);
+}
+.dossier__chip--primary:hover {
+  background: var(--acid);
+  color: var(--void);
 }
 
 /* ============ WORK ============ */
