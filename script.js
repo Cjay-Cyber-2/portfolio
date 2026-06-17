@@ -289,7 +289,7 @@
   /* ============ LIVING CORE — GLSL energy organism ============ */
   async function initLivingCore() {
     const canvas = document.getElementById("neural-canvas");
-    if (!canvas || reducedMotion || isMobile) return;
+    if (!canvas || reducedMotion) return;
 
     let THREE;
     try {
@@ -303,8 +303,8 @@
     const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 200);
     camera.position.z = 14;
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.25 : 1.5));
     renderer.setSize(innerWidth, innerHeight);
 
     // ---- 3D simplex noise (Ashima / IQ) shared by both shaders ----
@@ -402,7 +402,7 @@
     const coreGroup = new THREE.Group();
 
     const blob = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(3.6, 48),
+      new THREE.IcosahedronGeometry(3.6, isMobile ? 24 : 48),
       new THREE.ShaderMaterial({
         uniforms, vertexShader, fragmentShader,
         transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
@@ -411,7 +411,7 @@
     coreGroup.add(blob);
 
     const shell = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(3.78, 20),
+      new THREE.IcosahedronGeometry(3.78, isMobile ? 12 : 20),
       new THREE.ShaderMaterial({
         uniforms, vertexShader, fragmentShader,
         transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
@@ -436,7 +436,7 @@
     });
 
     // ---- spiral galaxy ----
-    const STARS = 6000, ARMS = 4;
+    const STARS = isMobile ? 2800 : 6000, ARMS = 4;
     const gPos = new Float32Array(STARS * 3);
     const gCol = new Float32Array(STARS * 3);
     const cIn = new THREE.Color(0xc6ff00), cOut = new THREE.Color(0xf2f0ea);
@@ -458,6 +458,103 @@
     }));
     galaxy.rotation.x = -0.45;
     scene.add(galaxy, coreGroup);
+
+    // ---- wishing comets — streak across the void every ~5s ----
+    const comets = [];
+    const cometBlend = () => (isLight() ? THREE.NormalBlending : THREE.AdditiveBlending);
+    let nextCometAt = 2.5;
+
+    function spawnComet() {
+      const edge = 26 + Math.random() * 10;
+      const picks = [
+        () => ({ x: -edge, y: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16, vx: 1, vy: (Math.random() - 0.5) * 0.35, vz: (Math.random() - 0.5) * 0.35 }),
+        () => ({ x: edge, y: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16, vx: -1, vy: (Math.random() - 0.5) * 0.35, vz: (Math.random() - 0.5) * 0.35 }),
+        () => ({ x: (Math.random() - 0.5) * 16, y: edge, z: (Math.random() - 0.5) * 16, vx: (Math.random() - 0.5) * 0.35, vy: -1, vz: (Math.random() - 0.5) * 0.35 }),
+        () => ({ x: (Math.random() - 0.5) * 16, y: -edge, z: (Math.random() - 0.5) * 16, vx: (Math.random() - 0.5) * 0.35, vy: 1, vz: (Math.random() - 0.5) * 0.35 }),
+        () => ({ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, z: -edge, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, vz: 1 }),
+        () => ({ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, z: edge, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, vz: -1 }),
+        () => ({ x: -edge, y: edge * 0.55, z: -edge * 0.45, vx: 1, vy: -0.75, vz: 0.55 }),
+        () => ({ x: edge, y: -edge * 0.45, z: edge * 0.35, vx: -0.95, vy: 0.65, vz: -0.45 }),
+      ];
+      const p = picks[(Math.random() * picks.length) | 0]();
+      const speed = 20 + Math.random() * 16;
+      const len = Math.hypot(p.vx, p.vy, p.vz) || 1;
+      p.vx = (p.vx / len) * speed;
+      p.vy = (p.vy / len) * speed;
+      p.vz = (p.vz / len) * speed;
+
+      const TRAIL = isMobile ? 12 : 18;
+      const pos = new Float32Array(TRAIL * 3);
+      for (let i = 0; i < TRAIL; i++) {
+        pos[i * 3] = p.x;
+        pos[i * 3 + 1] = p.y;
+        pos[i * 3 + 2] = p.z;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      const acidCol = isLight() ? 0x4a6b00 : 0xc6ff00;
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.14, 6, 6),
+        new THREE.MeshBasicMaterial({
+          color: isLight() ? 0x131310 : 0xf2f0ea,
+          transparent: true,
+          opacity: 0.95,
+          blending: cometBlend(),
+          depthWrite: false,
+        })
+      );
+      head.position.set(p.x, p.y, p.z);
+      const tail = new THREE.Line(
+        geo,
+        new THREE.LineBasicMaterial({
+          color: acidCol,
+          transparent: true,
+          opacity: 0.82,
+          blending: cometBlend(),
+          depthWrite: false,
+        })
+      );
+      scene.add(head, tail);
+      comets.push({ head, tail, pos, x: p.x, y: p.y, z: p.z, vx: p.vx, vy: p.vy, vz: p.vz, TRAIL });
+    }
+
+    function updateComets(dt) {
+      for (let i = comets.length - 1; i >= 0; i--) {
+        const c = comets[i];
+        c.x += c.vx * dt;
+        c.y += c.vy * dt;
+        c.z += c.vz * dt;
+        c.head.position.set(c.x, c.y, c.z);
+        for (let j = c.TRAIL - 1; j > 0; j--) {
+          c.pos[j * 3] = c.pos[(j - 1) * 3];
+          c.pos[j * 3 + 1] = c.pos[(j - 1) * 3 + 1];
+          c.pos[j * 3 + 2] = c.pos[(j - 1) * 3 + 2];
+        }
+        c.pos[0] = c.x;
+        c.pos[1] = c.y;
+        c.pos[2] = c.z;
+        c.tail.geometry.attributes.position.needsUpdate = true;
+        if (Math.abs(c.x) > 42 || Math.abs(c.y) > 42 || Math.abs(c.z) > 42) {
+          scene.remove(c.head, c.tail);
+          c.head.geometry.dispose();
+          c.head.material.dispose();
+          c.tail.geometry.dispose();
+          c.tail.material.dispose();
+          comets.splice(i, 1);
+        }
+      }
+    }
+
+    function applyCometTheme(light) {
+      const acid = light ? 0x4a6b00 : 0xc6ff00;
+      const blend = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+      comets.forEach((c) => {
+        c.tail.material.color.set(acid);
+        c.tail.material.blending = blend;
+        c.head.material.color.set(light ? 0x131310 : 0xf2f0ea);
+        c.head.material.blending = blend;
+      });
+    }
 
     // ---- live re-theme: additive neon in the void, olive ink on paper ----
     function applyCoreTheme(light) {
@@ -486,6 +583,7 @@
         colAttr.array[i * 3 + 2] = c.b;
       }
       colAttr.needsUpdate = true;
+      applyCometTheme(light);
     }
     themeHooks.push(applyCoreTheme);
     if (isLight()) applyCoreTheme(true);
@@ -524,8 +622,15 @@
     function animate() {
       requestAnimationFrame(animate);
       if (!heroVisible) return;
+      const dt = clock.getDelta();
       const t = clock.getElapsedTime();
       uniforms.uTime.value = t;
+
+      if (t >= nextCometAt) {
+        nextCometAt = t + 5;
+        spawnComet();
+      }
+      updateComets(dt);
 
       // organism breathes harder the faster you move
       targetAmp = 0.55 + (vel / 60) * 0.85;
