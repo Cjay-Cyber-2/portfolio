@@ -483,7 +483,7 @@
     // ---- shooting stars — luminous trails only, no floating dots ----
     const comets = [];
     const cometBlend = () => (isLight() ? THREE.NormalBlending : THREE.AdditiveBlending);
-    let nextCometAt = 1.8;
+    let nextCometAt = 2.5;
 
     function randomUnitVector() {
       const u = Math.random(), v = Math.random();
@@ -701,9 +701,8 @@
       uniforms.uTime.value = t;
 
       if (t >= nextCometAt) {
-        nextCometAt = t + 4 + Math.random() * 2.5;
+        nextCometAt = t + 5;
         spawnComet();
-        if (Math.random() < 0.4) spawnComet();
       }
       updateComets(dt);
 
