@@ -276,8 +276,13 @@
         </article>
       </div>
 
-      <div class="skills__ticker mono reveal" aria-hidden="true">
-        <span id="tickerText">PYTHON · TYPESCRIPT · GO · JAVA · C · REACT · NEXT.JS · FLUTTER · NODE · THREE.JS · MEDIAPIPE · CLAUDE · DOCKER · POSTGRES · TAILWIND · GIT ·&nbsp;</span>
+      <div class="skills__reactor reveal" aria-hidden="true">
+        <canvas id="skills-reactor-canvas"></canvas>
+        <div class="skills__reactor-scan"></div>
+        <div class="skills__reactor-label mono">
+          <span class="pulse-dot"></span>
+          NEURAL LOAD · SYS.ONLINE · <span id="reactorHz">48</span> HZ
+        </div>
       </div>
     </section>
 
@@ -399,7 +404,7 @@
         </article>
 
         <article class="project reveal" data-hover>
-          <a href="https://weathermee.vercel.app" target="_blank" rel="noopener" class="project__link" aria-label="WeatherMEE">
+          <a href="https://weathermee.vercel.app/" target="_blank" rel="noopener noreferrer" class="project__link" aria-label="WeatherMEE — open live site">
             <div class="project-thumb">
               <div class="thumb-placeholder mono">[ WEATHERMEE ]</div>
               <img src="assets/proj-weatherme.jpg" alt="WeatherMEE — simple weather search app" loading="lazy" onerror="this.remove()" />

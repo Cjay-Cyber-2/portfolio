@@ -518,14 +518,13 @@ main.warp { transform: scale(1.06); opacity: 0; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 .marquee:hover .marquee__track { animation-play-state: paused; }
 html.is-paused .marquee__track,
-html.is-paused .skills__ticker span,
+html.is-paused .skills__reactor-scan,
 html.is-paused .grain,
 html.is-paused .pulse-dot,
 html.is-paused .project--current .project__index {
   animation-play-state: paused;
 }
 html.mobile-lite .marquee__track { animation-duration: 36s; }
-html.mobile-lite .skills__ticker span { animation-duration: 28s; }
 
 /* ============ SECTIONS (shared) ============ */
 .section {
@@ -729,18 +728,60 @@ html.mobile-lite .skills__ticker span { animation-duration: 28s; }
 .skill-card li::before { content: "▸ "; color: var(--acid); }
 .skill-card li:hover { color: var(--bone); padding-left: 6px; }
 
-.skills__ticker {
+.skills__reactor {
   margin-top: 56px;
   border: 1px solid var(--line);
-  padding: 14px 0;
+  position: relative;
+  height: clamp(108px, 14vw, 148px);
   overflow: hidden;
-  white-space: nowrap;
-  font-size: 0.7rem;
-  letter-spacing: 0.22em;
-  color: var(--bone-dim);
+  background:
+    linear-gradient(180deg, var(--void-2), var(--void)),
+    repeating-linear-gradient(90deg, transparent 0 39px, rgba(var(--bone-rgb), 0.03) 39px 40px);
 }
-.skills__ticker span { display: inline-block; animation: marquee-l 22s linear infinite; }
-@keyframes marquee-l { to { transform: translateX(-100%); } }
+.skills__reactor canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.skills__reactor-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, var(--acid), transparent);
+  box-shadow: 0 0 22px rgba(var(--acid-rgb), 0.55);
+  animation: reactor-scan 4.6s linear infinite;
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 2;
+}
+@keyframes reactor-scan {
+  from { left: -3%; }
+  to { left: 103%; }
+}
+.skills__reactor-label {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  color: var(--bone-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 3;
+  pointer-events: none;
+}
+.skills__reactor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(var(--void-rgb), 0.85));
+  pointer-events: none;
+  z-index: 1;
+}
 
 /* ============ WORK ============ */
 .work__grid {
