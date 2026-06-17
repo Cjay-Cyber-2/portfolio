@@ -435,8 +435,8 @@
       coreGroup.add(ring);
     });
 
-    // ---- spiral galaxy ----
-    const STARS = isMobile ? 2800 : 6000, ARMS = 4;
+    // ---- spiral galaxy + deep starfield ----
+    const STARS = isMobile ? 4200 : 9500, ARMS = 4;
     const gPos = new Float32Array(STARS * 3);
     const gCol = new Float32Array(STARS * 3);
     const cIn = new THREE.Color(0xc6ff00), cOut = new THREE.Color(0xf2f0ea);
@@ -457,65 +457,167 @@
       blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
     }));
     galaxy.rotation.x = -0.45;
-    scene.add(galaxy, coreGroup);
 
-    // ---- wishing comets — streak across the void every ~5s ----
+    const FIELD_STARS = isMobile ? 2800 : 6200;
+    const fPos = new Float32Array(FIELD_STARS * 3);
+    const fCol = new Float32Array(FIELD_STARS * 3);
+    for (let i = 0; i < FIELD_STARS; i++) {
+      fPos[i * 3] = (Math.random() - 0.5) * 88;
+      fPos[i * 3 + 1] = (Math.random() - 0.5) * 52;
+      fPos[i * 3 + 2] = (Math.random() - 0.5) * 70 - 8;
+      const twinkle = 0.25 + Math.random() * 0.75;
+      const pick = Math.random() > 0.72 ? cIn : cOut;
+      fCol[i * 3] = pick.r * twinkle;
+      fCol[i * 3 + 1] = pick.g * twinkle;
+      fCol[i * 3 + 2] = pick.b * twinkle;
+    }
+    const fieldGeo = new THREE.BufferGeometry();
+    fieldGeo.setAttribute("position", new THREE.BufferAttribute(fPos, 3));
+    fieldGeo.setAttribute("color", new THREE.BufferAttribute(fCol, 3));
+    const starField = new THREE.Points(fieldGeo, new THREE.PointsMaterial({
+      size: 0.06, vertexColors: true, transparent: true, opacity: 0.72,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    }));
+    scene.add(starField, galaxy, coreGroup);
+
+    // ---- shooting stars — realistic acid/bone streaks from every direction ----
     const comets = [];
     const cometBlend = () => (isLight() ? THREE.NormalBlending : THREE.AdditiveBlending);
-    let nextCometAt = 2.5;
+    let nextCometAt = 1.8;
+    let glowTex;
+
+    function makeGlowTexture() {
+      const c = document.createElement("canvas");
+      c.width = c.height = 128;
+      const ctx = c.getContext("2d");
+      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, "rgba(255,255,255,1)");
+      g.addColorStop(0.12, "rgba(198,255,0,0.95)");
+      g.addColorStop(0.38, "rgba(198,255,0,0.28)");
+      g.addColorStop(1, "rgba(198,255,0,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 128, 128);
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function randomUnitVector() {
+      const u = Math.random(), v = Math.random();
+      const theta = Math.PI * 2 * u;
+      const phi = Math.acos(2 * v - 1);
+      return {
+        x: Math.sin(phi) * Math.cos(theta),
+        y: Math.sin(phi) * Math.sin(theta),
+        z: Math.cos(phi),
+      };
+    }
+
+    function buildCometColors(TRAIL, light) {
+      const colors = new Float32Array(TRAIL * 3);
+      const acid = new THREE.Color(light ? 0x5c7c0a : 0xc6ff00);
+      const bone = new THREE.Color(light ? 0x131310 : 0xf2f0ea);
+      for (let i = 0; i < TRAIL; i++) {
+        const t = i / Math.max(TRAIL - 1, 1);
+        const c = acid.clone().lerp(bone, Math.pow(t, 0.45));
+        const fade = Math.pow(1 - t, 2.1);
+        colors[i * 3] = c.r * fade;
+        colors[i * 3 + 1] = c.g * fade;
+        colors[i * 3 + 2] = c.b * fade;
+      }
+      return colors;
+    }
 
     function spawnComet() {
-      const edge = 26 + Math.random() * 10;
-      const picks = [
-        () => ({ x: -edge, y: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16, vx: 1, vy: (Math.random() - 0.5) * 0.35, vz: (Math.random() - 0.5) * 0.35 }),
-        () => ({ x: edge, y: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16, vx: -1, vy: (Math.random() - 0.5) * 0.35, vz: (Math.random() - 0.5) * 0.35 }),
-        () => ({ x: (Math.random() - 0.5) * 16, y: edge, z: (Math.random() - 0.5) * 16, vx: (Math.random() - 0.5) * 0.35, vy: -1, vz: (Math.random() - 0.5) * 0.35 }),
-        () => ({ x: (Math.random() - 0.5) * 16, y: -edge, z: (Math.random() - 0.5) * 16, vx: (Math.random() - 0.5) * 0.35, vy: 1, vz: (Math.random() - 0.5) * 0.35 }),
-        () => ({ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, z: -edge, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, vz: 1 }),
-        () => ({ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, z: edge, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, vz: -1 }),
-        () => ({ x: -edge, y: edge * 0.55, z: -edge * 0.45, vx: 1, vy: -0.75, vz: 0.55 }),
-        () => ({ x: edge, y: -edge * 0.45, z: edge * 0.35, vx: -0.95, vy: 0.65, vz: -0.45 }),
-      ];
-      const p = picks[(Math.random() * picks.length) | 0]();
-      const speed = 20 + Math.random() * 16;
-      const len = Math.hypot(p.vx, p.vy, p.vz) || 1;
-      p.vx = (p.vx / len) * speed;
-      p.vy = (p.vy / len) * speed;
-      p.vz = (p.vz / len) * speed;
+      const dir = randomUnitVector();
+      const speed = 22 + Math.random() * 24;
+      const spawnR = 34 + Math.random() * 14;
+      const x = -dir.x * spawnR + (Math.random() - 0.5) * 2.5;
+      const y = -dir.y * spawnR + (Math.random() - 0.5) * 2.5;
+      const z = -dir.z * spawnR + (Math.random() - 0.5) * 2.5;
+      const vx = dir.x * speed;
+      const vy = dir.y * speed;
+      const vz = dir.z * speed;
 
-      const TRAIL = isMobile ? 12 : 18;
+      const TRAIL = isMobile ? 22 : 34;
       const pos = new Float32Array(TRAIL * 3);
+      const colors = buildCometColors(TRAIL, isLight());
       for (let i = 0; i < TRAIL; i++) {
-        pos[i * 3] = p.x;
-        pos[i * 3 + 1] = p.y;
-        pos[i * 3 + 2] = p.z;
+        pos[i * 3] = x;
+        pos[i * 3 + 1] = y;
+        pos[i * 3 + 2] = z;
       }
       const geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      const acidCol = isLight() ? 0x4a6b00 : 0xc6ff00;
+      geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      const acidCol = isLight() ? 0x5c7c0a : 0xc6ff00;
+      const boneCol = isLight() ? 0x131310 : 0xf2f0ea;
+      const blend = cometBlend();
+
+      if (!glowTex) glowTex = makeGlowTexture();
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTex,
+        color: acidCol,
+        transparent: true,
+        opacity: isLight() ? 0.55 : 0.92,
+        blending: blend,
+        depthWrite: false,
+      }));
+      const glowScale = 1.4 + Math.random() * 0.9;
+      glow.scale.set(glowScale, glowScale * 0.55, 1);
+      glow.position.set(x, y, z);
+
       const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.14, 6, 6),
+        new THREE.SphereGeometry(0.09, 8, 8),
         new THREE.MeshBasicMaterial({
-          color: isLight() ? 0x131310 : 0xf2f0ea,
+          color: boneCol,
           transparent: true,
-          opacity: 0.95,
-          blending: cometBlend(),
+          opacity: 1,
+          blending: blend,
           depthWrite: false,
         })
       );
-      head.position.set(p.x, p.y, p.z);
+      head.position.set(x, y, z);
+
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.05, 6, 6),
+        new THREE.MeshBasicMaterial({
+          color: acidCol,
+          transparent: true,
+          opacity: 1,
+          blending: blend,
+          depthWrite: false,
+        })
+      );
+      core.position.set(x, y, z);
+
       const tail = new THREE.Line(
         geo,
         new THREE.LineBasicMaterial({
-          color: acidCol,
+          vertexColors: true,
           transparent: true,
-          opacity: 0.82,
-          blending: cometBlend(),
+          opacity: isLight() ? 0.88 : 1,
+          blending: blend,
           depthWrite: false,
         })
       );
-      scene.add(head, tail);
-      comets.push({ head, tail, pos, x: p.x, y: p.y, z: p.z, vx: p.vx, vy: p.vy, vz: p.vz, TRAIL });
+      scene.add(glow, head, core, tail);
+      comets.push({
+        glow, head, core, tail, pos, colors,
+        x, y, z, vx, vy, vz, TRAIL,
+        traveled: 0, maxTravel: 78 + Math.random() * 24,
+      });
+    }
+
+    function disposeComet(c) {
+      scene.remove(c.glow, c.head, c.core, c.tail);
+      c.glow.material.dispose();
+      c.head.geometry.dispose();
+      c.head.material.dispose();
+      c.core.geometry.dispose();
+      c.core.material.dispose();
+      c.tail.geometry.dispose();
+      c.tail.material.dispose();
     }
 
     function updateComets(dt) {
@@ -524,7 +626,10 @@
         c.x += c.vx * dt;
         c.y += c.vy * dt;
         c.z += c.vz * dt;
+        c.traveled += Math.hypot(c.vx, c.vy, c.vz) * dt;
+        c.glow.position.set(c.x, c.y, c.z);
         c.head.position.set(c.x, c.y, c.z);
+        c.core.position.set(c.x, c.y, c.z);
         for (let j = c.TRAIL - 1; j > 0; j--) {
           c.pos[j * 3] = c.pos[(j - 1) * 3];
           c.pos[j * 3 + 1] = c.pos[(j - 1) * 3 + 1];
@@ -534,25 +639,30 @@
         c.pos[1] = c.y;
         c.pos[2] = c.z;
         c.tail.geometry.attributes.position.needsUpdate = true;
-        if (Math.abs(c.x) > 42 || Math.abs(c.y) > 42 || Math.abs(c.z) > 42) {
-          scene.remove(c.head, c.tail);
-          c.head.geometry.dispose();
-          c.head.material.dispose();
-          c.tail.geometry.dispose();
-          c.tail.material.dispose();
+        if (c.traveled > c.maxTravel || Math.abs(c.x) > 48 || Math.abs(c.y) > 48 || Math.abs(c.z) > 48) {
+          disposeComet(c);
           comets.splice(i, 1);
         }
       }
     }
 
     function applyCometTheme(light) {
-      const acid = light ? 0x4a6b00 : 0xc6ff00;
+      const acid = light ? 0x5c7c0a : 0xc6ff00;
+      const bone = light ? 0x131310 : 0xf2f0ea;
       const blend = light ? THREE.NormalBlending : THREE.AdditiveBlending;
       comets.forEach((c) => {
-        c.tail.material.color.set(acid);
+        const next = buildCometColors(c.TRAIL, light);
+        c.colors.set(next);
+        c.tail.geometry.attributes.color.needsUpdate = true;
         c.tail.material.blending = blend;
-        c.head.material.color.set(light ? 0x131310 : 0xf2f0ea);
+        c.tail.material.opacity = light ? 0.88 : 1;
+        c.glow.material.color.set(acid);
+        c.glow.material.blending = blend;
+        c.glow.material.opacity = light ? 0.55 : 0.92;
+        c.head.material.color.set(bone);
         c.head.material.blending = blend;
+        c.core.material.color.set(acid);
+        c.core.material.blending = blend;
       });
     }
 
@@ -562,18 +672,28 @@
       uniforms.uColorA.value.set(acid);
       uniforms.uColorB.value.set(light ? 0x131310 : 0xf2f0ea);
       const blend = light ? THREE.NormalBlending : THREE.AdditiveBlending;
-      [blob.material, shell.material, galaxy.material].forEach((m) => {
+      [blob.material, shell.material, galaxy.material, starField.material].forEach((m) => {
         m.blending = blend;
         m.needsUpdate = true;
       });
       galaxy.material.opacity = light ? 0.5 : 0.8;
+      starField.material.opacity = light ? 0.42 : 0.72;
+      const gIn = new THREE.Color(acid);
+      const gOut = new THREE.Color(light ? 0x6b6a5e : 0xf2f0ea);
+      const fColAttr = fieldGeo.getAttribute("color");
+      for (let i = 0; i < FIELD_STARS; i++) {
+        const twinkle = 0.25 + (i % 97) / 97 * 0.75;
+        const pick = i % 5 === 0 ? gIn : gOut;
+        fColAttr.array[i * 3] = pick.r * twinkle;
+        fColAttr.array[i * 3 + 1] = pick.g * twinkle;
+        fColAttr.array[i * 3 + 2] = pick.b * twinkle;
+      }
+      fColAttr.needsUpdate = true;
       rings.forEach((ring) => {
         ring.material.color.set(acid);
         ring.material.blending = blend;
         ring.material.needsUpdate = true;
       });
-      const gIn = new THREE.Color(acid);
-      const gOut = new THREE.Color(light ? 0x6b6a5e : 0xf2f0ea);
       const colAttr = galaxyGeo.getAttribute("color");
       for (let i = 0; i < STARS; i++) {
         const r = Math.hypot(gPos[i * 3], gPos[i * 3 + 2]);
@@ -627,8 +747,9 @@
       uniforms.uTime.value = t;
 
       if (t >= nextCometAt) {
-        nextCometAt = t + 5;
+        nextCometAt = t + 4 + Math.random() * 2.5;
         spawnComet();
+        if (Math.random() < 0.4) spawnComet();
       }
       updateComets(dt);
 
@@ -645,6 +766,8 @@
       rings[2].rotation.y += 0.0022;
 
       galaxy.rotation.y = t * 0.02 + mx * 0.06;
+      starField.rotation.y = t * 0.008;
+      starField.rotation.x = Math.sin(t * 0.05) * 0.03;
 
       renderer.render(scene, camera);
     }
@@ -958,6 +1081,143 @@
     syncMobileUptime();
     setInterval(syncMobileUptime, 1000);
   }
+
+  /* ============ ARSENAL REACTOR — live signal viz (not a marquee) ============ */
+  function initSkillsReactor() {
+    const canvas = document.getElementById("skills-reactor-canvas");
+    const hzEl = document.getElementById("reactorHz");
+    if (!canvas || reducedMotion) return;
+
+    const ctx = canvas.getContext("2d");
+    const COLS = isMobile ? 18 : 32;
+    const nodes = Array.from({ length: COLS }, (_, i) => ({
+      x: 0,
+      base: 0.35 + Math.random() * 0.45,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.8 + Math.random() * 1.6,
+      amp: 0.08 + Math.random() * 0.22,
+    }));
+    const sparks = Array.from({ length: isMobile ? 14 : 28 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.0008,
+      vy: (Math.random() - 0.5) * 0.0006,
+      life: Math.random(),
+    }));
+    let w = 0, h = 0, dpr = 1, visible = false, raf = 0, t0 = 0;
+
+    function palette() {
+      const light = isLight();
+      return {
+        acid: light ? "rgb(92,124,10)" : "rgb(198,255,0)",
+        bone: light ? "rgba(19,19,16,0.55)" : "rgba(242,240,234,0.35)",
+        dim: light ? "rgba(107,106,94,0.35)" : "rgba(155,153,143,0.28)",
+        glow: light ? "rgba(92,124,10,0.18)" : "rgba(198,255,0,0.22)",
+      };
+    }
+
+    function resize() {
+      dpr = Math.min(devicePixelRatio, isMobile ? 1.25 : 1.75);
+      const r = canvas.getBoundingClientRect();
+      w = Math.max(1, r.width);
+      h = Math.max(1, r.height);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      nodes.forEach((n, i) => { n.x = (i + 0.5) / COLS; });
+    }
+
+    function draw(now) {
+      if (!visible || document.hidden) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      const t = (now - t0) * 0.001;
+      const p = palette();
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = p.dim;
+      ctx.lineWidth = 1;
+      for (let y = 0.22; y < 0.92; y += 0.18) {
+        ctx.beginPath();
+        ctx.moveTo(0, h * y);
+        ctx.lineTo(w, h * y);
+        ctx.stroke();
+      }
+
+      const waveY = [];
+      nodes.forEach((n, i) => {
+        const x = n.x * w;
+        const y = h * (n.base + Math.sin(t * n.speed + n.phase) * n.amp);
+        waveY[i] = y;
+        ctx.fillStyle = p.glow;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = p.acid;
+        ctx.beginPath();
+        ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.beginPath();
+      ctx.moveTo(0, waveY[0]);
+      for (let i = 1; i < waveY.length; i++) {
+        const x0 = nodes[i - 1].x * w;
+        const x1 = nodes[i].x * w;
+        const cx = (x0 + x1) / 2;
+        ctx.bezierCurveTo(cx, waveY[i - 1], cx, waveY[i], x1, waveY[i]);
+      }
+      ctx.strokeStyle = p.acid;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = p.acid;
+      ctx.shadowBlur = isLight() ? 4 : 14;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = p.bone;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < nodes.length - 1; i++) {
+        if (i % 3 !== 0) continue;
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x * w, waveY[i]);
+        ctx.lineTo(nodes[i + 1].x * w, waveY[i + 1] - 18 - Math.sin(t * 2 + i) * 8);
+        ctx.stroke();
+      }
+
+      sparks.forEach((s) => {
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life += 0.012;
+        if (s.x < 0 || s.x > 1 || s.y < 0 || s.y > 1 || s.life > 1) {
+          s.x = Math.random();
+          s.y = Math.random();
+          s.life = 0;
+        }
+        ctx.fillStyle = p.acid;
+        ctx.globalAlpha = (1 - s.life) * 0.65;
+        ctx.fillRect(s.x * w, s.y * h, 2, 2);
+      });
+      ctx.globalAlpha = 1;
+
+      if (hzEl && Math.floor(t * 4) % 4 === 0) {
+        hzEl.textContent = String(42 + ((Math.sin(t * 3.7) + 1) * 14) | 0);
+      }
+
+      raf = requestAnimationFrame(draw);
+    }
+
+    resize();
+    addEventListener("resize", resize);
+    const reactor = canvas.closest(".skills__reactor");
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; })
+      .observe(reactor || canvas);
+    visible = true;
+    t0 = performance.now();
+    raf = requestAnimationFrame(draw);
+    themeHooks.push(() => { /* palette reads live theme each frame */ });
+  }
+  initSkillsReactor();
 
   const year = new Date().getFullYear();
   const footerYear = document.getElementById("footerYear");
